@@ -1,11 +1,23 @@
 {
+  "version": 2,
   "headers": [
     {
       "source": "/tonconnect-manifest.json",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Content-Type", "value": "application/json" }
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" }
       ]
+    }
+  ],
+  "routes": [
+    {
+      "src": "/tonconnect-manifest.json",
+      "dest": "/tonconnect-manifest.json"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ]
 }
