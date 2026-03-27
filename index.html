@@ -125,8 +125,8 @@
     // - proses payment
   }
 <script>
-  const tg = window.Telegram.WebApp;
-  tg.expand();
+  const tg = window.Telegram?.WebApp;
+  if (tg) tg.expand();
 
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
@@ -136,14 +136,19 @@
 
   let selected = null;
 
-  let tiles = JSON.parse(localStorage.getItem("tiles")) || {};
+  let tiles = {};
+  try {
+    tiles = JSON.parse(localStorage.getItem("tiles")) || {};
+  } catch {
+    tiles = {};
+  }
 
   function drawGrid() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for (let x = 0; x < gridSize; x++) {
       for (let y = 0; y < gridSize; y++) {
-        const key = `${x}_${y}`;
+        const key = x + "_" + y;
 
         if (tiles[key]) {
           ctx.fillStyle = tiles[key];
@@ -158,15 +163,15 @@
 
   drawGrid();
 
-  canvas.addEventListener("click", (e) => {
+  canvas.addEventListener("click", function(e) {
     const rect = canvas.getBoundingClientRect();
     const x = Math.floor((e.clientX - rect.left) / tileSize);
     const y = Math.floor((e.clientY - rect.top) / tileSize);
 
-    selected = { x, y };
+    selected = { x: x, y: y };
 
     document.getElementById("info").innerText =
-      `Petak dipilih: (${x}, ${y})`;
+      "Petak dipilih: (" + x + ", " + y + ")";
 
     drawGrid();
 
@@ -180,8 +185,9 @@
       return;
     }
 
-    const key = `${selected.x}_${selected.y}`;
-    const color = "#" + Math.floor(Math.random()*16777215).toString(16);
+    const key = selected.x + "_" + selected.y;
+
+    const color = "#" + Math.floor(Math.random() * 16777215).toString(16);
 
     tiles[key] = color;
 
@@ -190,6 +196,6 @@
     drawGrid();
   }
 </script>
-
+ 
 </body>
 </html>
