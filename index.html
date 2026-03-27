@@ -1,89 +1,226 @@
-function draw() {
-  if (!ctx || !canvas) return;
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TonCanvas Grid</title>
+<style>
+  :root { --bg:#0f172a; --grid:#1e293b; --line:rgba(255,255,255,0.08); --hover:rgba(59,130,246,0.3); --select:rgba(34,197,94,0.5); }
+  html,body { height:100%; margin:0; background:var(--bg); color:#fff; font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; }
+  #canvasWrap { display:flex; align-items:center; justify-content:center; height:100vh; }
+  canvas { background:var(--grid); border:2px solid #0ea5e9; display:block; max-width:100%; height:auto; }
+</style>
+</head>
+<body>
+<div id="canvasWrap">
+  <canvas id="gridCanvas" width="800" height="800" aria-label="Canvas grid"></canvas>
+</div>
 
-  /* RESET */
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+<script>
+/* ====== Config ====== */
+const GRID_SIZE = 40;        // jumlah tile per sisi
+const TILE_SIZE = 20;        // pixel per tile (logical)
+const DEFAULT_SCALE = 1.0;
 
-  /* CAMERA */
-  ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+/* ====== CanvasGrid class ====== */
+class CanvasGrid {
+  constructor(canvas, options = {}) {
+    if (!canvas || !canvas.getContext) throw new Error('Canvas element required');
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.dpr = Math.max(1, window.devicePixelRatio || 1);
 
-  const gridPixelSize = GRID_SIZE * TILE_SIZE;
+    this.gridSize = options.gridSize || GRID_SIZE;
+    this.tileSize = options.tileSize || TILE_SIZE;
+    this.scale = options.scale || DEFAULT_SCALE;
+    this.offsetX = options.offsetX || 0;
+    this.offsetY = options.offsetY || 0;
 
-  /* BACKGROUND */
-  ctx.fillStyle = "#1e293b";
-  ctx.fillRect(0, 0, gridPixelSize, gridPixelSize);
+    this.selectedTiles = new Set(); // keys "x,y"
+    this.hoverTile = null;          // {x,y}
+    this.isSelecting = false;
+    this.selectStart = null;
+    this.selectEnd = null;
 
-  /* GRID (tetap style kamu, tapi lebih aman) */
-  ctx.strokeStyle = "rgba(255,255,255,0.08)";
-  ctx.lineWidth = 1;
+    this._rafId = null;
+    this._needsRedraw = true;
 
-  for (let x = 0; x < GRID_SIZE; x++) {
-    const px = x * TILE_SIZE;
-    for (let y = 0; y < GRID_SIZE; y++) {
-      ctx.strokeRect(px, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-    }
+    this._bindHandlers();
+    this._resizeCanvas();
+    window.addEventListener('resize', () => this._onWindowResize());
+    this.start();
   }
 
-  /* SELECTED */
-  if (selectedTiles && selectedTiles.size > 0) {
-    ctx.fillStyle = "rgba(34,197,94,0.5)";
+  /* Public API */
+  setScale(s) { this.scale = Math.max(0.1, Number(s) || 1); this._markDirty(); }
+  setOffset(x,y) { this.offsetX = Number(x)||0; this.offsetY = Number(y)||0; this._markDirty(); }
+  setHover(tile) { this.hoverTile = this._normalizeTile(tile); this._markDirty(); }
+  clearHover() { this.hoverTile = null; this._markDirty(); }
+  addSelected(x,y) { this.selectedTiles.add(`${x},${y}`); this._markDirty(); }
+  removeSelected(x,y) { this.selectedTiles.delete(`${x},${y}`); this._markDirty(); }
+  clearSelection() { this.selectedTiles.clear(); this._markDirty(); }
+  startSelection(start) { this.isSelecting = true; this.selectStart = this._normalizeTile(start); this.selectEnd = this.selectStart; this._markDirty(); }
+  updateSelection(end) { this.selectEnd = this._normalizeTile(end); this._markDirty(); }
+  endSelection() { this.isSelecting = false; this.selectStart = null; this.selectEnd = null; this._markDirty(); }
 
-    selectedTiles.forEach(key => {
-      const parts = key.split(',');
-      if (parts.length !== 2) return;
+  start() {
+    if (!this._rafId) this._loop();
+  }
+  stop() {
+    if (this._rafId) cancelAnimationFrame(this._rafId);
+    this._rafId = null;
+  }
 
-      const x = Number(parts[0]);
-      const y = Number(parts[1]);
-
-      if (isNaN(x) || isNaN(y)) return;
-      if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return;
-
-      ctx.fillRect(
-        x * TILE_SIZE,
-        y * TILE_SIZE,
-        TILE_SIZE,
-        TILE_SIZE
-      );
+  /* Internal helpers */
+  _bindHandlers() {
+    // optional: attach pointer events for demo convenience
+    this.canvas.addEventListener('pointermove', (e) => {
+      const t = this._screenToTile(e.clientX, e.clientY);
+      this.setHover(t);
+    });
+    this.canvas.addEventListener('pointerleave', () => this.clearHover());
+    this.canvas.addEventListener('click', (e) => {
+      const t = this._screenToTile(e.clientX, e.clientY);
+      if (t) {
+        const key = `${t.x},${t.y}`;
+        if (this.selectedTiles.has(key)) this.selectedTiles.delete(key);
+        else this.selectedTiles.add(key);
+        this._markDirty();
+      }
     });
   }
 
-  /* HOVER */
-  if (hoverTile && Number.isInteger(hoverTile.x) && Number.isInteger(hoverTile.y)) {
-    if (hoverTile.x >= 0 && hoverTile.y >= 0) {
-      ctx.fillStyle = "rgba(59,130,246,0.3)";
-      ctx.fillRect(
-        hoverTile.x * TILE_SIZE,
-        hoverTile.y * TILE_SIZE,
-        TILE_SIZE,
-        TILE_SIZE
-      );
+  _normalizeTile(tile) {
+    if (!tile) return null;
+    const x = Number(tile.x);
+    const y = Number(tile.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return { x: Math.floor(x), y: Math.floor(y) };
+  }
+
+  _screenToTile(clientX, clientY) {
+    const rect = this.canvas.getBoundingClientRect();
+    const cx = (clientX - rect.left) * (this.canvas.width / rect.width);
+    const cy = (clientY - rect.top) * (this.canvas.height / rect.height);
+    // apply inverse camera transform: (x - offset) / (tileSize * scale)
+    const invScale = 1 / this.scale;
+    const logicalX = (cx - this.offsetX * this.dpr) * invScale;
+    const logicalY = (cy - this.offsetY * this.dpr) * invScale;
+    const tx = Math.floor(logicalX / (this.tileSize * this.dpr));
+    const ty = Math.floor(logicalY / (this.tileSize * this.dpr));
+    if (tx < 0 || ty < 0 || tx >= this.gridSize || ty >= this.gridSize) return null;
+    return { x: tx, y: ty };
+  }
+
+  _resizeCanvas() {
+    // logical pixel size = gridPixelSize * scale
+    const gridPixelSize = this.gridSize * this.tileSize;
+    const cssWidth = Math.min(window.innerWidth - 40, gridPixelSize);
+    const cssHeight = cssWidth; // keep square
+    this.canvas.style.width = cssWidth + 'px';
+    this.canvas.style.height = cssHeight + 'px';
+
+    // actual backing store size
+    const backing = Math.round(cssWidth * this.dpr);
+    this.canvas.width = backing;
+    this.canvas.height = backing;
+    this._markDirty();
+  }
+
+  _onWindowResize() {
+    this._resizeCanvas();
+  }
+
+  _markDirty() {
+    this._needsRedraw = true;
+  }
+
+  _loop() {
+    this._rafId = requestAnimationFrame(() => this._loop());
+    if (this._needsRedraw) {
+      this._needsRedraw = false;
+      this._draw();
     }
   }
 
-  /* SELECTION BOX */
-  if (isSelecting && selectStart && selectEnd) {
-    const x1 = Math.min(selectStart.x, selectEnd.x);
-    const y1 = Math.min(selectStart.y, selectEnd.y);
-    const x2 = Math.max(selectStart.x, selectEnd.x);
-    const y2 = Math.max(selectStart.y, selectEnd.y);
+  _draw() {
+    const ctx = this.ctx;
+    const canvas = this.canvas;
+    if (!ctx || !canvas) return;
 
-    ctx.fillStyle = "rgba(59,130,246,0.2)";
-    ctx.fillRect(
-      x1 * TILE_SIZE,
-      y1 * TILE_SIZE,
-      (x2 - x1 + 1) * TILE_SIZE,
-      (y2 - y1 + 1) * TILE_SIZE
-    );
+    // reset transform and clear
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    /* border biar keliatan pro */
-    ctx.strokeStyle = "rgba(59,130,246,0.6)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(
-      x1 * TILE_SIZE,
-      y1 * TILE_SIZE,
-      (x2 - x1 + 1) * TILE_SIZE,
-      (y2 - y1 + 1) * TILE_SIZE
-    );
+    // camera transform: scale and offset (offset in device pixels)
+    ctx.setTransform(this.scale * this.dpr, 0, 0, this.scale * this.dpr, this.offsetX * this.dpr, this.offsetY * this.dpr);
+
+    const gridPixelSize = this.gridSize * this.tileSize;
+
+    // background
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, gridPixelSize, gridPixelSize);
+
+    // grid lines (optimize by drawing vertical then horizontal)
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1 / (this.scale * this.dpr); // keep 1px visual regardless of scale
+    ctx.beginPath();
+    for (let i = 0; i <= this.gridSize; i++) {
+      const p = i * this.tileSize;
+      // vertical
+      ctx.moveTo(p + 0.5, 0);
+      ctx.lineTo(p + 0.5, gridPixelSize);
+      // horizontal
+      ctx.moveTo(0, p + 0.5);
+      ctx.lineTo(gridPixelSize, p + 0.5);
+    }
+    ctx.stroke();
+
+    // selected tiles
+    if (this.selectedTiles && this.selectedTiles.size > 0) {
+      ctx.fillStyle = 'rgba(34,197,94,0.5)';
+      for (const key of this.selectedTiles) {
+        const [sx, sy] = key.split(',').map(Number);
+        if (!Number.isFinite(sx) || !Number.isFinite(sy)) continue;
+        if (sx < 0 || sy < 0 || sx >= this.gridSize || sy >= this.gridSize) continue;
+        ctx.fillRect(sx * this.tileSize, sy * this.tileSize, this.tileSize, this.tileSize);
+      }
+    }
+
+    // hover tile
+    if (this.hoverTile) {
+      const { x, y } = this.hoverTile;
+      if (Number.isInteger(x) && Number.isInteger(y) && x >= 0 && y >= 0 && x < this.gridSize && y < this.gridSize) {
+        ctx.fillStyle = 'rgba(59,130,246,0.3)';
+        ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+      }
+    }
+
+    // selection box
+    if (this.isSelecting && this.selectStart && this.selectEnd) {
+      const x1 = Math.min(this.selectStart.x, this.selectEnd.x);
+      const y1 = Math.min(this.selectStart.y, this.selectEnd.y);
+      const x2 = Math.max(this.selectStart.x, this.selectEnd.x);
+      const y2 = Math.max(this.selectStart.y, this.selectEnd.y);
+
+      ctx.fillStyle = 'rgba(59,130,246,0.18)';
+      ctx.fillRect(x1 * this.tileSize, y1 * this.tileSize, (x2 - x1 + 1) * this.tileSize, (y2 - y1 + 1) * this.tileSize);
+
+      ctx.strokeStyle = 'rgba(59,130,246,0.6)';
+      ctx.lineWidth = 1 / (this.scale * this.dpr);
+      ctx.strokeRect(x1 * this.tileSize + 0.5, y1 * this.tileSize + 0.5, (x2 - x1 + 1) * this.tileSize - 1, (y2 - y1 + 1) * this.tileSize - 1);
+    }
   }
 }
+
+/* ====== Init ====== */
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('gridCanvas');
+  const grid = new CanvasGrid(canvas, { gridSize: 40, tileSize: 20, scale: 1 });
+
+  // Example: expose to window for quick debugging in console
+  window.__TonCanvasGrid = grid;
+});
+</script>
+</body>
+</html>
