@@ -1,36 +1,64 @@
 function draw() {
-  /* RESET TRANSFORM */
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (!ctx || !canvas) return;
 
-  /* CLEAR FULL CANVAS */
+  /* RESET */
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  /* APPLY CAMERA */
+  /* CAMERA */
   ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+
+  const gridPixelSize = GRID_SIZE * TILE_SIZE;
 
   /* BACKGROUND */
   ctx.fillStyle = "#1e293b";
-  ctx.fillRect(0, 0, GRID_SIZE * TILE_SIZE, GRID_SIZE * TILE_SIZE);
+  ctx.fillRect(0, 0, gridPixelSize, gridPixelSize);
 
-  /* GRID */
+  /* GRID (tetap style kamu, tapi lebih aman) */
   ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+
   for (let x = 0; x < GRID_SIZE; x++) {
+    const px = x * TILE_SIZE;
     for (let y = 0; y < GRID_SIZE; y++) {
-      ctx.strokeRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      ctx.strokeRect(px, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }
   }
 
   /* SELECTED */
-  ctx.fillStyle = "rgba(34,197,94,0.5)";
-  selectedTiles.forEach(key => {
-    const [x, y] = key.split(',').map(Number);
-    ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
-  });
+  if (selectedTiles && selectedTiles.size > 0) {
+    ctx.fillStyle = "rgba(34,197,94,0.5)";
+
+    selectedTiles.forEach(key => {
+      const parts = key.split(',');
+      if (parts.length !== 2) return;
+
+      const x = Number(parts[0]);
+      const y = Number(parts[1]);
+
+      if (isNaN(x) || isNaN(y)) return;
+      if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return;
+
+      ctx.fillRect(
+        x * TILE_SIZE,
+        y * TILE_SIZE,
+        TILE_SIZE,
+        TILE_SIZE
+      );
+    });
+  }
 
   /* HOVER */
-  if (hoverTile) {
-    ctx.fillStyle = "rgba(59,130,246,0.3)";
-    ctx.fillRect(hoverTile.x*TILE_SIZE, hoverTile.y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+  if (hoverTile && Number.isInteger(hoverTile.x) && Number.isInteger(hoverTile.y)) {
+    if (hoverTile.x >= 0 && hoverTile.y >= 0) {
+      ctx.fillStyle = "rgba(59,130,246,0.3)";
+      ctx.fillRect(
+        hoverTile.x * TILE_SIZE,
+        hoverTile.y * TILE_SIZE,
+        TILE_SIZE,
+        TILE_SIZE
+      );
+    }
   }
 
   /* SELECTION BOX */
@@ -42,10 +70,20 @@ function draw() {
 
     ctx.fillStyle = "rgba(59,130,246,0.2)";
     ctx.fillRect(
-      x1*TILE_SIZE,
-      y1*TILE_SIZE,
-      (x2-x1+1)*TILE_SIZE,
-      (y2-y1+1)*TILE_SIZE
+      x1 * TILE_SIZE,
+      y1 * TILE_SIZE,
+      (x2 - x1 + 1) * TILE_SIZE,
+      (y2 - y1 + 1) * TILE_SIZE
+    );
+
+    /* border biar keliatan pro */
+    ctx.strokeStyle = "rgba(59,130,246,0.6)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(
+      x1 * TILE_SIZE,
+      y1 * TILE_SIZE,
+      (x2 - x1 + 1) * TILE_SIZE,
+      (y2 - y1 + 1) * TILE_SIZE
     );
   }
 }
