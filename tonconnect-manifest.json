@@ -2,6 +2,6 @@
   "url": "https://toncanvas.vercel.app",
   "name": "TonCanvas",
   "iconUrl": "https://toncanvas.vercel.app/icon.png",
-  "termsOfServiceUrl": "https://toncanvas.vercel.app/terms",
+  "termsOfUseUrl": "https://toncanvas.vercel.app/terms",
   "privacyPolicyUrl": "https://toncanvas.vercel.app/privacy"
 }
