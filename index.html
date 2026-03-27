@@ -428,36 +428,34 @@ async function buyTileFlow(x,y){
 /* ================ TonConnect integration ================
    This section dynamically loads TonConnect UI if not present,
    initializes a TonConnectUI instance and exposes it as window.tonConnectUI.
-   Replace RECEIVER_ADDRESS and VERIFY_API_URL with your values.
+   Uses manifest located at /public/tonconnect-manifest.json as requested.
 */
 async function ensureTonConnectReady() {
   if (window.tonConnectUI) return window.tonConnectUI;
-
-  // Try to load TonConnect UI and SDK from CDN (best-effort). If blocked, fallback to simulation.
   try {
-    if (!window.TonConnect) {
-      await loadScript('https://unpkg.com/@tonconnect/sdk/dist/tonconnect.umd.js');
-    }
-    if (!window.TonConnectUI) {
-      await loadScript('https://unpkg.com/@tonconnect/ui/dist/tonconnect-ui.min.js');
-    }
-    // initialize TonConnectUI
-    if (window.TonConnectUI) {
-      const ui = new window.TonConnectUI.TonConnectUI({
-        manifestUrl: window.location.origin + '/tonconnect-manifest.json',
-        projectId: 'toncanvas-project'
-      });
-      window.tonConnectUI = ui;
-      return ui;
-    }
+    await loadScript('https://unpkg.com/@tonconnect/sdk/dist/tonconnect.umd.js');
+    await loadScript('https://unpkg.com/@tonconnect/ui/dist/tonconnect-ui.min.js');
+
+    // <-- gunakan path public jika manifest ada di /public
+    const manifestUrl = window.location.origin + '/public/tonconnect-manifest.json';
+    const r = await fetch(manifestUrl, { method: 'GET' });
+    if (!r.ok) throw new Error('Manifest not reachable: ' + r.status);
+
+    const ui = new window.TonConnectUI.TonConnectUI({
+      manifestUrl,
+      projectId: 'toncanvas-project'
+    });
+    window.tonConnectUI = ui;
+    return ui;
   } catch (err) {
     console.warn('TonConnect load failed, falling back to simulation', err);
+    return null;
   }
-  return null;
 }
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) return resolve();
     const s = document.createElement('script');
     s.src = src;
     s.onload = () => resolve();
