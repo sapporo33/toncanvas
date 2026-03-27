@@ -1,0 +1,14 @@
+<canvas id="c" width="180" height="180"></canvas>
+<script>
+const ctx = document.getElementById("c").getContext("2d");
+
+ctx.fillStyle = "#111";
+ctx.fillRect(0,0,180,180);
+
+ctx.fillStyle = "#00ffcc";
+for(let i=0;i<10;i++){
+  for(let j=0;j<10;j++){
+    ctx.fillRect(i*18, j*18, 16, 16);
+  }
+}
+</script>
