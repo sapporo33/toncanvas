@@ -22,102 +22,122 @@
 </head>
 <body>
 
-<!-- Tombol wallet fixed di kanan atas (root untuk TonConnect UI) -->
 <div id="ton-connect-btn"></div>
 
-<canvas id="appCanvas" width="800" height="800"></canvas>
+<canvas id="appCanvas" width="800" height="800" aria-label="Canvas TonCanvas"></canvas>
 
-<div id="panel">
+<div id="panel" aria-hidden="true">
   <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
     <span id="pos">Posisi: (0,0)</span>
-    <button onclick="closePanel()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">&times;</button>
+    <button onclick="closePanel()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;" aria-label="Tutup panel">&times;</button>
   </div>
   <input type="text" id="img" placeholder="Link Gambar (PNG/JPG)">
   <input type="text" id="link" placeholder="Link Tujuan">
-  <button class="btn" onclick="sendTx()">BAYAR & MINT (0.5 TON)</button>
+  <button class="btn" id="mintBtn">BAYAR & MINT (0.5 TON)</button>
   <div style="margin-top:8px;">
-    <button class="btn" style="background:#0ea5e9; margin-top:8px;" onclick="openTonkeeper()">Buka di Tonkeeper (Fallback)</button>
+    <button class="btn" style="background:#0ea5e9; margin-top:8px;" id="fallbackBtn">Buka di Tonkeeper (Fallback)</button>
   </div>
   <div class="small">Jika modal tidak muncul di Telegram, gunakan tombol fallback.</div>
 </div>
 
 <script>
 /* ====== Konfigurasi ====== */
-const MANIFEST_URL = 'https://toncanvas.vercel.app/tonconnect-manifest.json'; // ganti jika domain berbeda
+const MANIFEST_URL = 'https://toncanvas.vercel.app/tonconnect-manifest.json';
 const RECEIVER_ADDRESS = "UQDZDbDI-vjbkEpviXoWXuAc3dTHG-MiYC8gi5tYnHxXMLDd";
 const AMOUNT_NANOTON = "500000000"; // 0.5 TON
 
 /* ====== State ====== */
 let tonConnectUI = null;
 let userAddress = null;
-const canvas = document.getElementById('appCanvas');
-const ctx = canvas.getContext('2d');
-const panel = document.getElementById('panel');
-let targetTile = null;
+let canvas, ctx, panel, targetTile;
 
 /* ====== Inisialisasi setelah DOM siap ====== */
 document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    // Pastikan root button ada
-    const btnRoot = document.getElementById('ton-connect-btn');
-    if (!btnRoot) {
-      console.error('Element #ton-connect-btn tidak ditemukan.');
-    }
+  // ambil elemen DOM setelah siap
+  canvas = document.getElementById('appCanvas');
+  ctx = canvas.getContext ? canvas.getContext('2d') : null;
+  panel = document.getElementById('panel');
 
-    // Cek TonConnectUI tersedia
-    if (!window.TonConnectUI) {
-      console.error('TonConnectUI tidak ditemukan. Pastikan script ter-load.');
-      return;
-    }
-
-    // Inisialisasi TonConnectUI
-    tonConnectUI = new TonConnectUI.TonConnectUI({
-      manifestUrl: MANIFEST_URL,
-      buttonRootId: 'ton-connect-btn'
-    });
-
-    console.log('TonConnectUI instance dibuat:', tonConnectUI);
-
-    // Restore connection jika ada session tersimpan
-    try {
-      await tonConnectUI.restoreConnection();
-      console.log('restoreConnection selesai. connected:', tonConnectUI.connected);
-      if (tonConnectUI.connected && tonConnectUI.wallet) {
-        const w = tonConnectUI.wallet;
-        userAddress = (w.account && w.account.address) || w.address || null;
-        console.log('Restored wallet address:', userAddress);
-      }
-    } catch (err) {
-      console.warn('restoreConnection error:', err);
-    }
-
-    // Event handlers
-    tonConnectUI.on('connect', (wallet) => {
-      console.log('EVENT connect payload:', wallet);
-      userAddress = (wallet.account && wallet.account.address) || wallet.address || null;
-      console.log('Wallet connected:', userAddress);
-      alert('Wallet connected: ' + userAddress);
-    });
-
-    tonConnectUI.on('disconnect', () => {
-      userAddress = null;
-      console.log('EVENT disconnect');
-      alert('Wallet disconnected');
-    });
-
-    tonConnectUI.on('error', (err) => {
-      console.error('TonConnect error:', err);
-    });
-
-  } catch (e) {
-    console.error('Init error:', e);
+  // safety: pastikan canvas dan ctx ada
+  if (!canvas || !ctx) {
+    console.error('Canvas atau context tidak tersedia.');
+    return;
   }
 
+  // cek TonConnectUI
+  if (!window.TonConnectUI) {
+    console.error('TonConnectUI tidak ditemukan. Pastikan script ter-load.');
+  } else {
+    // inisialisasi TonConnectUI (sesuaikan jika library expose berbeda)
+    try {
+      tonConnectUI = new TonConnectUI.TonConnectUI({
+        manifestUrl: MANIFEST_URL,
+        buttonRootId: 'ton-connect-btn'
+      });
+      console.log('TonConnectUI instance dibuat');
+    } catch (e) {
+      console.error('Gagal membuat TonConnectUI instance:', e);
+    }
+
+    // restore connection jika ada session
+    if (tonConnectUI && typeof tonConnectUI.restoreConnection === 'function') {
+      try {
+        await tonConnectUI.restoreConnection();
+        console.log('restoreConnection selesai. connected:', tonConnectUI.connected);
+        if (tonConnectUI.connected && tonConnectUI.wallet) {
+          const w = tonConnectUI.wallet;
+          userAddress = (w.account && w.account.address) || w.address || null;
+          console.log('Restored wallet address:', userAddress);
+        }
+      } catch (err) {
+        console.warn('restoreConnection error:', err);
+      }
+    }
+    // event handlers
+    if (tonConnectUI) {
+      tonConnectUI.on && tonConnectUI.on('connect', (wallet) => {
+        userAddress = (wallet.account && wallet.account.address) || wallet.address || null;
+        console.log('Wallet connected:', userAddress);
+        alert('Wallet connected: ' + userAddress);
+      });
+      tonConnectUI.on && tonConnectUI.on('disconnect', () => {
+        userAddress = null;
+        console.log('Wallet disconnected');
+        alert('Wallet disconnected');
+      });
+      tonConnectUI.on && tonConnectUI.on('error', (err) => {
+        console.error('TonConnect error:', err);
+      });
+    }
+  }
+
+  // gambar awal
   draw();
+
+  // event canvas click (daftarkan setelah canvas tersedia)
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor(((e.clientX - rect.left) * (800 / rect.width)) / 20);
+    const y = Math.floor(((e.clientY - rect.top) * (800 / rect.height)) / 20);
+    targetTile = {x,y};
+    document.getElementById('pos').innerText = `Posisi: (${x},${y})`;
+    panel.style.display = 'block';
+    panel.setAttribute('aria-hidden', 'false');
+    draw();
+    ctx.fillStyle = "rgba(34,197,94,0.4)";
+    ctx.fillRect(x*20, y*20, 20, 20);
+  });
+
+  // tombol mint & fallback
+  document.getElementById('mintBtn').addEventListener('click', sendTx);
+  document.getElementById('fallbackBtn').addEventListener('click', openTonkeeper);
+
+  console.log('Init complete. manifestUrl:', MANIFEST_URL);
 });
 
 /* ====== Drawing grid ====== */
 function draw() {
+  if (!ctx) return;
   ctx.fillStyle = "#1e293b";
   ctx.fillRect(0,0,800,800);
   ctx.strokeStyle = "rgba(255,255,255,0.05)";
@@ -127,20 +147,14 @@ function draw() {
   }
 }
 
-/* ====== Canvas click ====== */
-canvas.addEventListener('click', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const x = Math.floor(((e.clientX - rect.left) * (800 / rect.width)) / 20);
-  const y = Math.floor(((e.clientY - rect.top) * (800 / rect.height)) / 20);
-  targetTile = {x,y};
-  document.getElementById('pos').innerText = `Posisi: (${x},${y})`;
-  panel.style.display = 'block';
+/* ====== Panel control ====== */
+function closePanel() {
+  if (panel) {
+    panel.style.display = 'none';
+    panel.setAttribute('aria-hidden', 'true');
+  }
   draw();
-  ctx.fillStyle = "rgba(34,197,94,0.4)";
-  ctx.fillRect(x*20, y*20, 20, 20);
-});
-
-function closePanel() { panel.style.display='none'; draw(); }
+}
 
 /* ====== Kirim transaksi ====== */
 async function sendTx() {
@@ -151,9 +165,12 @@ async function sendTx() {
 
   if (!userAddress) {
     alert('Hubungkan wallet dulu!');
-    // Buka modal TonConnect; jika diblokir, user bisa pakai fallback
     try {
-      tonConnectUI.openModal();
+      if (typeof tonConnectUI.openModal === 'function') {
+        tonConnectUI.openModal();
+      } else {
+        console.warn('openModal tidak tersedia pada TonConnectUI instance.');
+      }
     } catch (err) {
       console.warn('openModal error:', err);
       alert('Modal diblokir di WebView. Gunakan tombol "Buka di Tonkeeper" sebagai fallback.');
@@ -178,14 +195,13 @@ async function sendTx() {
   }
 }
 
-/* ====== Fallback: buka Tonkeeper via deep link (Telegram WebApp jika tersedia) ====== */
+/* ====== Fallback: buka Tonkeeper via deep link ====== */
 function openTonkeeper() {
-  const tonkeeperLink = `tonkeeper://transfer/${RECEIVER_ADDRESS}?amount=${(parseInt(AMOUNT_NANOTON)/1e9)}`;
+  const tonkeeperLink = `tonkeeper://transfer/${RECEIVER_ADDRESS}?amount=${(parseInt(AMOUNT_NANOTON,10)/1e9)}`;
   try {
     if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink) {
       Telegram.WebApp.openLink(tonkeeperLink);
     } else {
-      // fallback ke window.open (mungkin diblokir di WebView)
       window.open(tonkeeperLink, '_blank');
     }
   } catch (err) {
@@ -193,9 +209,6 @@ function openTonkeeper() {
     alert('Tidak dapat membuka Tonkeeper dari sini.');
   }
 }
-
-/* ====== Utility: tampilkan status di console untuk debugging WebView ====== */
-console.log('Script loaded. Pastikan manifestUrl:', MANIFEST_URL);
 </script>
 
 </body>
