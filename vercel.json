@@ -1,4 +1,7 @@
 {
+  "routes": [
+    { "src": "/", "dest": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/tonconnect-manifest.json",
