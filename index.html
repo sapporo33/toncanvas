@@ -2,133 +2,71 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>TonCanvas | Fixed Connect Wallet</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TON Connect Test</title>
 <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-
 <style>
-    body { margin: 0; background: #0f172a; color: white; font-family: sans-serif; }
-    header { 
-        display: flex; justify-content: space-between; align-items: center; 
-        padding: 15px 20px; background: #1e293b; border-bottom: 1px solid #334155;
-    }
-    #ton-connect-btn { min-width: 150px; display: flex; justify-content: flex-end; }
-    canvas { display: block; margin: 20px auto; border: 2px solid #0088cc; background: #1e293b; max-width: 95%; }
-    #panel {
-        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-        width: 90%; max-width: 350px; background: #1e293b; padding: 20px;
-        border-radius: 12px; border: 1px solid #0088cc; display: none;
-    }
-    input { width: 100%; padding: 10px; margin: 10px 0; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 5px; box-sizing: border-box; }
-    .btn { width: 100%; padding: 12px; background: #22c55e; border: none; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; }
+    body { background:#0f172a; color:white; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; }
+    #ton-connect-btn { min-width:200px; margin-bottom:20px; }
+    .btn { padding:12px 20px; background:#22c55e; border:none; color:white; font-weight:bold; border-radius:8px; cursor:pointer; }
 </style>
 </head>
 <body>
 
-<header>
-    <div style="font-weight: 800; letter-spacing: 1px;">TONCANVAS</div>
+<div>
     <div id="ton-connect-btn"></div>
-</header>
-
-<canvas id="appCanvas" width="800" height="800"></canvas>
-
-<div id="panel">
-    <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
-        <span id="pos" style="color:#22c55e; font-weight:bold;">Posisi: (0,0)</span>
-        <button onclick="closePanel()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">&times;</button>
-    </div>
-    <input type="text" id="img" placeholder="Link Gambar (PNG/JPG)">
-    <input type="text" id="link" placeholder="Link Tujuan">
-    <button class="btn" onclick="sendTx()">BAYAR & MINT (0.5 TON)</button>
+    <button class="btn" id="sendTxBtn">Kirim 0.5 TON</button>
 </div>
 
 <script>
 let tonConnectUI;
-const canvas = document.getElementById('appCanvas');
-const ctx = canvas.getContext('2d');
-const panel = document.getElementById('panel');
-let targetTile = null;
 let userAddress = null;
 
-// Inisialisasi TON Connect UI
 function init() {
-    try {
-        tonConnectUI = new TonConnectUI.TonConnectUI({
-            manifestUrl: 'https://toncanvas.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn'
-        });
+    tonConnectUI = new TonConnectUI.TonConnectUI({
+        manifestUrl: 'https://toncanvas.vercel.app/tonconnect-manifest.json', // Pastikan manifest ini benar
+        buttonRootId: 'ton-connect-btn'
+    });
 
-        // Event ketika user connect wallet
-        tonConnectUI.on('connect', (wallet) => {
-            userAddress = wallet.account.address;
-            console.log("Wallet connected:", userAddress);
-        });
+    // Event connect
+    tonConnectUI.on('connect', (wallet) => {
+        userAddress = wallet.account.address;
+        alert("Wallet connected: " + userAddress);
+        console.log("Connected:", userAddress);
+    });
 
-        tonConnectUI.on('disconnect', () => {
-            userAddress = null;
-            console.log("Wallet disconnected");
-        });
+    tonConnectUI.on('disconnect', () => {
+        userAddress = null;
+        alert("Wallet disconnected");
+        console.log("Disconnected");
+    });
 
-        console.log("TON Connect UI berhasil dimuat");
-    } catch (e) {
-        console.error("Gagal inisialisasi TON Connect UI:", e);
-    }
+    document.getElementById('sendTxBtn').addEventListener('click', async () => {
+        if (!userAddress) {
+            alert("Hubungkan wallet dulu!");
+            tonConnectUI.openModal();
+            return;
+        }
 
-    draw();
-}
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 300,
+            messages: [{
+                address: "UQDZDbDI-vjbkEpviXoWXuAc3dTHG-MiYC8gi5tYnHxXMLDd",
+                amount: "500000000" // 0.5 TON dalam nanotons
+            }]
+        };
 
-function draw() {
-    ctx.fillStyle = "#1e293b";
-    ctx.fillRect(0,0,800,800);
-    ctx.strokeStyle = "rgba(255,255,255,0.05)";
-    for(let i=0; i<=800; i+=20) {
-        ctx.strokeRect(i, 0, 20, 800);
-        ctx.strokeRect(0, i, 800, 20);
-    }
-}
-
-canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.floor(((e.clientX - rect.left) * (800 / rect.width)) / 20);
-    const y = Math.floor(((e.clientY - rect.top) * (800 / rect.height)) / 20);
-    targetTile = {x, y};
-    document.getElementById('pos').innerText = `Posisi: (${x},${y})`;
-    panel.style.display = 'block';
-    draw();
-    ctx.fillStyle = "rgba(34, 197, 94, 0.4)";
-    ctx.fillRect(x*20, y*20, 20, 20);
-});
-
-function closePanel() { panel.style.display = 'none'; draw(); }
-
-async function sendTx() {
-    if (!userAddress) {
-        alert("Hubungkan dompet dulu!");
-        tonConnectUI.openModal();
-        return;
-    }
-
-    const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 300,
-        messages: [{
-            address: "UQDZDbDI-vjbkEpviXoWXuAc3dTHG-MiYC8gi5tYnHxXMLDd",
-            amount: "500000000" // 0.5 TON dalam nanotons
-        }]
-    };
-
-    try {
-        await tonConnectUI.sendTransaction(transaction);
-        alert("Transaksi Berhasil!");
-        closePanel();
-    } catch (err) {
-        alert("Transaksi Dibatalkan");
-        console.error(err);
-    }
+        try {
+            await tonConnectUI.sendTransaction(transaction);
+            alert("Transaksi Berhasil!");
+        } catch (err) {
+            alert("Transaksi Dibatalkan");
+            console.error(err);
+        }
+    });
 }
 
 window.onload = init;
 </script>
-
 </body>
 </html>
