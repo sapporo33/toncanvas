@@ -124,10 +124,47 @@
     // - kirim ke backend
     // - proses payment
   }
-<script>
-  const tg = window.Telegram?.WebApp;
-  if (tg) tg.expand();
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>TonCanvas</title>
 
+  <style>
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: white;
+      font-family: Arial;
+      text-align: center;
+    }
+
+    canvas {
+      background: #1e293b;
+      margin-top: 10px;
+      border: 1px solid #334155;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: green;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>🎨 TonCanvas</h2>
+<p id="info">Klik petak</p>
+
+<canvas id="canvas" width="500" height="500"></canvas>
+<br>
+<button onclick="buyTile()">Beli Petak</button>
+
+<script>
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
 
@@ -135,13 +172,7 @@
   const tileSize = canvas.width / gridSize;
 
   let selected = null;
-
   let tiles = {};
-  try {
-    tiles = JSON.parse(localStorage.getItem("tiles")) || {};
-  } catch {
-    tiles = {};
-  }
 
   function drawGrid() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -171,31 +202,28 @@
     selected = { x: x, y: y };
 
     document.getElementById("info").innerText =
-      "Petak dipilih: (" + x + ", " + y + ")";
+      "Dipilih: (" + x + ", " + y + ")";
 
     drawGrid();
 
-    ctx.fillStyle = "rgba(34,197,94,0.4)";
+    ctx.fillStyle = "rgba(0,255,0,0.3)";
     ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
   });
 
   function buyTile() {
     if (!selected) {
-      alert("Pilih petak dulu!");
+      alert("Klik petak dulu!");
       return;
     }
 
     const key = selected.x + "_" + selected.y;
-
     const color = "#" + Math.floor(Math.random() * 16777215).toString(16);
 
     tiles[key] = color;
 
-    localStorage.setItem("tiles", JSON.stringify(tiles));
-
     drawGrid();
   }
 </script>
- 
+
 </body>
 </html>
