@@ -249,4 +249,48 @@
 </script>
 
 </body>
+    <script type="module">
+    import { TonConnectUI } from 'https://cdn.skypack.dev/@tonconnect/ui';
+    
+    // Simpan ke window agar bisa diakses fungsi lain jika perlu
+    window.TonConnectUI = TonConnectUI;
+
+    // 2. Fungsi Inisialisasi di dalam Modul
+    async function initTonConnect() {
+        const btnContainer = document.getElementById('ton-connect-btn');
+        
+        if (!btnContainer) {
+            setTimeout(initTonConnect, 100);
+            return;
+        }
+
+        try {
+            // Inisialisasi langsung menggunakan class yang di-import
+            window.tonConnectUI = new TonConnectUI({
+                manifestUrl: 'https://toncanvas.vercel.app/tonconnect-manifest.json', 
+                buttonRootId: 'ton-connect-btn'
+            });
+
+            console.log("TON Connect Berhasil Dimuat");
+        } catch (e) {
+            console.error("Gagal Inisialisasi TON Connect:", e);
+        }
+    }
+
+    // Jalankan inisialisasi
+    initTonConnect();
+</script>
+
+<script>
+    // Fungsi transaksi Anda sekarang harus menggunakan window.tonConnectUI
+    async function processPayment() {
+        if (!window.tonConnectUI || !window.tonConnectUI.connected) {
+            alert("Hubungkan wallet dulu bosku!");
+            window.tonConnectUI.openModal();
+            return;
+        }
+        
+        // ... sisa kode transaksi Anda ...
+    }
+</script>
 </html>
