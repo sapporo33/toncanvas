@@ -1,14 +1,11 @@
 {
+  "builds": [
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
   "routes": [
     { "src": "/", "dest": "/index.html" }
-  ],
-  "headers": [
-    {
-      "source": "/tonconnect-manifest.json",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Content-Type", "value": "application/json" }
-      ]
-    }
   ]
 }
