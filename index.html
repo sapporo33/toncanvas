@@ -33,8 +33,9 @@
         .logo { font-weight: 800; font-size: 1.1rem; color: white; text-decoration: none; }
         .logo span { color: var(--primary); }
 
+        /* Container untuk Button TON Connect */
         #ton-connect-btn { 
-            min-width: 140px;
+            min-width: 150px;
             display: flex;
             justify-content: flex-end;
         }
@@ -68,7 +69,6 @@
             color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;
             outline: none;
         }
-        input:focus { border-color: var(--primary); }
 
         .btn-mint {
             width: 100%; padding: 14px; background: var(--accent);
@@ -116,35 +116,39 @@
 </div>
 
 <script>
+    // --- GLOBAL VARIABLES ---
     let tonConnectUI;
     const canvas = document.getElementById('appCanvas');
     const ctx = canvas.getContext('2d');
     const panel = document.getElementById('uiPanel');
-    
     const gridSize = 40; 
     const tileSize = canvas.width / gridSize;
     let selected = null;
     let tilesData = {}; 
 
-    // --- INITIALIZATION ---
-    async function init() {
+    // --- 1. INITIALIZATION ---
+    async function initApp() {
         // Init Telegram
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand();
         }
 
-        // Init TON Connect
-        // Menggunakan library yang ter-load dari CDN unpkg
-        tonConnectUI = new TONConnectUI.TonConnectUI({
-            manifestUrl: 'https://raw.githubusercontent.com/ton-connect/demo-dapp/main/public/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn'
-        });
+        // Init TON Connect (Hanya panggil SATU kali)
+        try {
+            tonConnectUI = new TONConnectUI.TonConnectUI({
+                manifestUrl: 'https://toncanvas.vercel.app/tonconnect-manifest.json',
+                buttonRootId: 'ton-connect-btn'
+            });
+            console.log("TON Connect Initialized");
+        } catch (e) {
+            console.error("TON Connect failed:", e);
+        }
 
         draw();
     }
 
-    // --- DRAWING ---
+    // --- 2. DRAWING ---
     function draw() {
         ctx.fillStyle = "#1e293b";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -152,12 +156,10 @@
         for (let x = 0; x < gridSize; x++) {
             for (let y = 0; y < gridSize; y++) {
                 const key = `${x}_${y}`;
-                
                 if (tilesData[key]) {
                     ctx.fillStyle = tilesData[key].color;
                     ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
                 }
-
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
                 ctx.lineWidth = 0.5;
                 ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
@@ -173,12 +175,11 @@
         }
     }
 
-    // --- INTERACTION ---
+    // --- 3. INTERACTION ---
     canvas.addEventListener('click', (e) => {
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
-        
         const x = Math.floor(((e.clientX - rect.left) * scaleX) / tileSize);
         const y = Math.floor(((e.clientY - rect.top) * scaleY) / tileSize);
 
@@ -187,7 +188,6 @@
             document.getElementById('coordLabel').innerText = `TILE: ${x}, ${y}`;
             panel.style.display = 'block';
             draw();
-
             if (window.Telegram?.WebApp?.HapticFeedback) {
                 window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
             }
@@ -200,11 +200,11 @@
         draw();
     }
 
-    // --- PAYMENT ---
+    // --- 4. PAYMENT LOGIC ---
     async function processPayment() {
-        if (!tonConnectUI.connected) {
+        if (!tonConnectUI || !tonConnectUI.connected) {
             alert("Please connect your wallet first!");
-            tonConnectUI.openModal();
+            if(tonConnectUI) tonConnectUI.openModal();
             return;
         }
 
@@ -212,7 +212,7 @@
         const link = document.getElementById('targetLink').value;
 
         if (!img || !link) {
-            alert("Please fill in both image and redirect links.");
+            alert("Fill image and redirect links.");
             return;
         }
 
@@ -228,71 +228,23 @@
             document.getElementById('mintBtn').innerText = "AWAITING WALLET...";
             document.getElementById('mintBtn').disabled = true;
 
-            const result = await tonConnectUI.sendTransaction(transaction);
+            await tonConnectUI.sendTransaction(transaction);
             
-            // Success Logic
             const key = `${selected.x}_${selected.y}`;
             tilesData[key] = { color: '#22c55e', img, link }; 
-            alert("Transaction sent successfully!");
+            alert("Mint successful!");
             hidePanel();
         } catch (e) {
             console.error(e);
-            alert("Transaction failed or rejected.");
+            alert("Transaction failed.");
         } finally {
             document.getElementById('mintBtn').innerText = "MINT FOR 0.5 TON";
             document.getElementById('mintBtn').disabled = false;
         }
     }
 
-    // Start
-    init();
+    // Jalankan inisialisasi saat window load
+    window.addEventListener('load', initApp);
 </script>
-
-    <link rel="stylesheet" href="https://unpkg.com/@tonconnect/ui@latest/dist/style.css">
-<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 </body>
-    <script type="module">
-    import { TonConnectUI } from 'https://cdn.skypack.dev/@tonconnect/ui';
-    
-    // Simpan ke window agar bisa diakses fungsi lain jika perlu
-    window.TonConnectUI = TonConnectUI;
-
-    // 2. Fungsi Inisialisasi di dalam Modul
-    async function initTonConnect() {
-        const btnContainer = document.getElementById('ton-connect-btn');
-        
-        if (!btnContainer) {
-            setTimeout(initTonConnect, 100);
-            return;
-        }
-
-        try {
-            // Inisialisasi langsung menggunakan class yang di-import
-            window.tonConnectUI = new TonConnectUI({
-                manifestUrl: 'https://toncanvas.vercel.app/tonconnect-manifest.json', 
-                buttonRootId: 'ton-connect-btn'
-            });
-
-            console.log("TON Connect Berhasil Dimuat");
-        } catch (e) {
-            console.error("Gagal Inisialisasi TON Connect:", e);
-        }
-    }
-
-    // Jalankan inisialisasi
-    initTonConnect();
-</script>
-
-<script>
-    // Fungsi transaksi Anda sekarang harus menggunakan window.tonConnectUI
-    async function processPayment() {
-        if (!window.tonConnectUI || !window.tonConnectUI.connected) {
-            alert("Hubungkan wallet dulu bosku!");
-            window.tonConnectUI.openModal();
-            return;
-        }
-        
-        // ... sisa kode transaksi Anda ...
-    }
-</script>
 </html>
