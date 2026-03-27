@@ -3,87 +3,43 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>TonCanvas Mobile (Portrait)</title>
+<title>TonCanvas Portrait Grid</title>
 <style>
   :root{
     --bg:#0b1220;
-    --panel:#0f172a;
     --grid:#1e293b;
-    --accent:#0ea5e9;
+    --line:rgba(255,255,255,0.06);
     --hover:rgba(59,130,246,0.28);
     --select:rgba(34,197,94,0.45);
+    --panel:#0f172a;
     --muted:#9ca3af;
+    --accent:#0ea5e9;
   }
-  html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;}
-  /* Fullscreen portrait layout for Telegram WebApp */
-  #app {
-    display:flex;
-    flex-direction:column;
-    height:100vh;
-    box-sizing:border-box;
-    padding:12px;
-    gap:10px;
-  }
-  header {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:8px;
-  }
-  .title {font-weight:600;font-size:16px;}
-  .sub {font-size:12px;color:var(--muted);}
-  #canvasWrap {
-    flex:1 1 auto;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
-    border-radius:12px;
-    padding:8px;
-    box-sizing:border-box;
-    overflow:hidden;
-  }
-  canvas {
-    background:var(--grid);
-    border-radius:8px;
-    width:100%;
-    height:100%;
-    max-width:420px; /* limit for large phones */
-    max-height:calc(100vh - 140px);
-    display:block;
-    touch-action: none; /* we'll handle gestures */
-  }
-  footer {
-    display:flex;
-    gap:8px;
-    align-items:center;
-    justify-content:space-between;
-  }
-  .btn {
-    background:var(--accent);
-    color:#fff;
-    border:none;
-    padding:10px 12px;
-    border-radius:10px;
-    font-weight:600;
-    cursor:pointer;
-  }
-  .ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted); }
-  .info { font-size:12px; color:var(--muted); text-align:right; }
+  html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Roboto,Arial;}
+  #app{display:flex;flex-direction:column;height:100vh;padding:12px;box-sizing:border-box;gap:10px;}
+  header{display:flex;justify-content:space-between;align-items:center;}
+  .title{font-weight:600;font-size:16px;}
+  .sub{font-size:12px;color:var(--muted);}
+  #canvasWrap{flex:1 1 auto;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:12px;padding:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);}
+  canvas{background:var(--grid);border-radius:8px;touch-action:none;display:block;width:100%;height:100%;max-width:420px;max-height:calc(100vh - 140px);}
+  footer{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .btn{background:var(--accent);color:#fff;border:none;padding:10px 12px;border-radius:10px;font-weight:600;cursor:pointer;}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);}
+  .info{font-size:12px;color:var(--muted);text-align:right;}
 </style>
 </head>
 <body>
-<div id="app" role="application" aria-label="TonCanvas mobile">
+<div id="app" role="application" aria-label="TonCanvas portrait">
   <header>
     <div>
       <div class="title">TonCanvas</div>
-      <div class="sub">Tap untuk pilih; pinch untuk zoom; drag untuk pan</div>
+      <div class="sub">Portrait grid • Tap untuk pilih • Drag untuk multi‑select • Pinch/scroll untuk zoom</div>
     </div>
     <div class="sub" id="posLabel">Pos: —</div>
   </header>
 
   <div id="canvasWrap">
-    <canvas id="mobileCanvas" aria-label="Canvas TonCanvas"></canvas>
+    <canvas id="portraitCanvas" aria-label="Grid canvas"></canvas>
   </div>
 
   <footer>
@@ -91,19 +47,20 @@
       <button class="btn" id="clearBtn">Clear</button>
       <button class="btn ghost" id="selectAllBtn">Select All</button>
     </div>
-    <div class="info">Grid responsive • Portrait</div>
+    <div class="info">Grid fixed • Portrait • Multi‑select drag</div>
   </footer>
 </div>
 
 <script>
 /* ====== Config ====== */
 const GRID_SIZE = 40;      // tiles per side
-const TILE_SIZE = 20;      // logical tile size (will scale with DPR)
-const MIN_SCALE = 0.5;
+const TILE_SIZE = 20;      // logical tile size
+const MIN_SCALE = 0.6;
 const MAX_SCALE = 3.0;
+const INITIAL_SCALE = 1.0;
 
-/* ====== CanvasGrid (compact, mobile-focused) ====== */
-class CanvasGridMobile {
+/* ====== PortraitGrid class ====== */
+class PortraitGrid {
   constructor(canvas, opts = {}) {
     if (!canvas || !canvas.getContext) throw new Error('Canvas required');
     this.canvas = canvas;
@@ -112,22 +69,22 @@ class CanvasGridMobile {
 
     this.gridSize = opts.gridSize || GRID_SIZE;
     this.tileSize = opts.tileSize || TILE_SIZE;
-    this.scale = opts.scale || 1;
-    this.offsetX = opts.offsetX || 0;
-    this.offsetY = opts.offsetY || 0;
+    this.scale = opts.scale || INITIAL_SCALE;
 
-    this.selected = new Set();
+    // **No panning**: grid is centered and fixed; offsets derived from centering
+    this.offsetX = 0;
+    this.offsetY = 0;
+
+    this.selected = new Set(); // keys "x,y"
     this.hover = null;
 
-    this.isPanning = false;
-    this.lastPan = null;
-
-    this.isSelecting = false;
-    this.selectStart = null;
-    this.selectEnd = null;
+    // selection drag
+    this.isDragging = false;
+    this.dragStart = null;
+    this.dragEnd = null;
 
     this._needsRedraw = true;
-    this._bind();
+    this._bindEvents();
     this._resize();
     window.addEventListener('resize', () => this._resize());
     this._loop();
@@ -141,80 +98,58 @@ class CanvasGridMobile {
     this._mark();
   }
 
-  /* Internal */
-  _bind() {
-    // pointer events for mobile-friendly interactions
-    let ongoingTouches = [];
-    const toTile = (clientX, clientY) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const cx = (clientX - rect.left) * (this.canvas.width / rect.width);
-      const cy = (clientY - rect.top) * (this.canvas.height / rect.height);
-      const inv = 1 / (this.scale * this.dpr);
-      const lx = (cx - this.offsetX * this.dpr) * inv;
-      const ly = (cy - this.offsetY * this.dpr) * inv;
-      const tx = Math.floor(lx / (this.tileSize * this.dpr));
-      const ty = Math.floor(ly / (this.tileSize * this.dpr));
-      if (tx < 0 || ty < 0 || tx >= this.gridSize || ty >= this.gridSize) return null;
-      return {x:tx,y:ty};
-    };
-
-    // pointerdown / pointermove / pointerup for single touch pan/select
+  /* Internal helpers */
+  _bindEvents() {
+    // pointer events for tap and drag selection
     this.canvas.addEventListener('pointerdown', (e) => {
       this.canvas.setPointerCapture(e.pointerId);
-      if (e.isPrimary && e.pointerType === 'touch') {
-        // start potential pan or tap
-        this.isPanning = true;
-        this.lastPan = {x:e.clientX, y:e.clientY};
-      } else {
-        // mouse or stylus: treat as click select
-        const t = toTile(e.clientX, e.clientY);
-        if (t) this._toggleTile(t.x, t.y);
-      }
+      const tile = this._screenToTile(e.clientX, e.clientY);
+      // start drag selection on primary pointer (touch or mouse)
+      this.isDragging = true;
+      this.dragStart = tile || {x:-1,y:-1};
+      this.dragEnd = this.dragStart;
+      this._mark();
     });
 
     this.canvas.addEventListener('pointermove', (e) => {
-      if (this.isPanning && this.lastPan) {
-        const dx = e.clientX - this.lastPan.x;
-        const dy = e.clientY - this.lastPan.y;
-        this.offsetX += dx / (this.dpr);
-        this.offsetY += dy / (this.dpr);
-        this.lastPan = {x:e.clientX, y:e.clientY};
+      if (this.isDragging) {
+        this.dragEnd = this._screenToTile(e.clientX, e.clientY) || {x:-1,y:-1};
         this._mark();
       } else {
-        const t = toTile(e.clientX, e.clientY);
+        const t = this._screenToTile(e.clientX, e.clientY);
         this.hover = t;
+        this._updatePosLabel(t);
         this._mark();
       }
-      _updatePosLabel(this.hover);
     });
 
     this.canvas.addEventListener('pointerup', (e) => {
       this.canvas.releasePointerCapture(e.pointerId);
-      if (this.isPanning) {
-        this.isPanning = false;
-        this.lastPan = null;
+      if (this.isDragging) {
+        this.isDragging = false;
+        this._applyDragSelection();
+        this.dragStart = null;
+        this.dragEnd = null;
+        this._mark();
       }
     });
 
-    // wheel for desktop zoom
+    // wheel zoom (desktop)
     this.canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const delta = -e.deltaY * 0.001;
+      const delta = -e.deltaY * 0.0015;
       this._zoomAt(delta, e.clientX, e.clientY);
     }, {passive:false});
 
     // pinch zoom (touch)
     let pinchStart = null;
     this.canvas.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
-        pinchStart = this._distance(e.touches[0], e.touches[1]);
-      }
+      if (e.touches.length === 2) pinchStart = this._touchDistance(e.touches);
     }, {passive:true});
     this.canvas.addEventListener('touchmove', (e) => {
       if (e.touches.length === 2 && pinchStart) {
-        const d = this._distance(e.touches[0], e.touches[1]);
+        const d = this._touchDistance(e.touches);
         const delta = (d - pinchStart) * 0.002;
-        // center between touches
         const cx = (e.touches[0].clientX + e.touches[1].clientX)/2;
         const cy = (e.touches[0].clientY + e.touches[1].clientY)/2;
         this._zoomAt(delta, cx, cy);
@@ -224,44 +159,74 @@ class CanvasGridMobile {
     this.canvas.addEventListener('touchend', () => { pinchStart = null; }, {passive:true});
   }
 
-  _distance(a,b){ const dx=a.clientX-b.clientX; const dy=a.clientY-b.clientY; return Math.hypot(dx,dy); }
-
-  _toggleTile(x,y){
-    const key = `${x},${y}`;
-    if (this.selected.has(key)) this.selected.delete(key);
-    else this.selected.add(key);
-    this._mark();
+  _touchDistance(touches) {
+    const a = touches[0], b = touches[1];
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
   }
 
-  _zoomAt(delta, clientX, clientY){
-    const oldScale = this.scale;
-    let newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, this.scale + delta));
-    if (newScale === oldScale) return;
-    // zoom around screen point -> adjust offset so point stays under finger
+  _applyDragSelection() {
+    if (!this.dragStart || !this.dragEnd) return;
+    const s = this._clampTile(this.dragStart);
+    const e = this._clampTile(this.dragEnd);
+    if (!s || !e) return;
+    const x1 = Math.min(s.x, e.x), y1 = Math.min(s.y, e.y);
+    const x2 = Math.max(s.x, e.x), y2 = Math.max(s.y, e.y);
+    for (let x = x1; x <= x2; x++) {
+      for (let y = y1; y <= y2; y++) {
+        this.selected.add(`${x},${y}`);
+      }
+    }
+  }
+
+  _clampTile(t) {
+    if (!t) return null;
+    const x = Math.floor(Number(t.x));
+    const y = Math.floor(Number(t.y));
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    if (x < 0 || y < 0 || x >= this.gridSize || y >= this.gridSize) return null;
+    return {x,y};
+  }
+
+  _screenToTile(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
     const cx = (clientX - rect.left) * (this.canvas.width / rect.width);
     const cy = (clientY - rect.top) * (this.canvas.height / rect.height);
-    const worldX = (cx - this.offsetX * this.dpr) / (this.dpr * oldScale);
-    const worldY = (cy - this.offsetY * this.dpr) / (this.dpr * oldScale);
-    this.scale = newScale;
-    this.offsetX = (cx / this.dpr) - worldX * this.scale;
-    this.offsetY = (cy / this.dpr) - worldY * this.scale;
+    // compute center offset so grid is centered and fixed
+    const gridPixel = this.gridSize * this.tileSize * this.scale * this.dpr;
+    const canvasCenterX = this.canvas.width / 2;
+    const canvasCenterY = this.canvas.height / 2;
+    const gridLeft = canvasCenterX - gridPixel / 2;
+    const gridTop = canvasCenterY - gridPixel / 2;
+    const localX = (cx - gridLeft) / (this.scale * this.dpr);
+    const localY = (cy - gridTop) / (this.scale * this.dpr);
+    const tx = Math.floor(localX / this.tileSize);
+    const ty = Math.floor(localY / this.tileSize);
+    if (tx < 0 || ty < 0 || tx >= this.gridSize || ty >= this.gridSize) return null;
+    return {x:tx,y:ty};
+  }
+
+  _zoomAt(delta, clientX, clientY) {
+    const old = this.scale;
+    let next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, this.scale + delta));
+    if (next === old) return;
+    // Zoom around point but keep grid centered visually (no panning)
+    // We adjust scale only; grid remains centered in canvas.
+    this.scale = next;
     this._mark();
   }
 
-  _resize(){
-    // make canvas square but portrait-friendly: use available height minus header/footer
+  _resize() {
+    // portrait-friendly square canvas sized by available height/width
     const wrap = this.canvas.parentElement;
-    const style = getComputedStyle(wrap);
-    const padX = parseFloat(style.paddingLeft||0) + parseFloat(style.paddingRight||0);
-    const padY = parseFloat(style.paddingTop||0) + parseFloat(style.paddingBottom||0);
-    const cssWidth = Math.min(window.innerWidth - 24, 420);
-    const cssHeight = Math.max( Math.min(window.innerHeight - 140, window.innerHeight - 140), cssWidth );
-    // keep square based on width
-    const finalCss = cssWidth;
-    this.canvas.style.width = finalCss + 'px';
-    this.canvas.style.height = finalCss + 'px';
-    const backing = Math.round(finalCss * this.dpr);
+    const maxWidth = Math.min(window.innerWidth - 24, 420);
+    const availableHeight = window.innerHeight - 140;
+    const size = Math.min(maxWidth, Math.max( Math.min(window.innerWidth - 24, availableHeight), maxWidth ));
+    const cssSize = Math.max( Math.min(window.innerWidth - 24, 420), Math.floor(window.innerHeight * 0.5) );
+    // choose square based on width but constrained by viewport
+    const final = Math.min(maxWidth, Math.max( Math.min(window.innerWidth - 24, availableHeight), 240 ));
+    this.canvas.style.width = final + 'px';
+    this.canvas.style.height = final + 'px';
+    const backing = Math.round(final * this.dpr);
     this.canvas.width = backing;
     this.canvas.height = backing;
     this._mark();
@@ -269,7 +234,7 @@ class CanvasGridMobile {
 
   _mark(){ this._needsRedraw = true; }
 
-  _loop(){
+  _loop() {
     requestAnimationFrame(()=>this._loop());
     if (this._needsRedraw) {
       this._needsRedraw = false;
@@ -277,85 +242,95 @@ class CanvasGridMobile {
     }
   }
 
-  _draw(){
+  _draw() {
     const ctx = this.ctx;
     const canvas = this.canvas;
     if (!ctx || !canvas) return;
 
-    // reset & clear
+    // clear
     ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    // camera transform (scale * dpr)
-    ctx.setTransform(this.scale * this.dpr, 0, 0, this.scale * this.dpr, this.offsetX * this.dpr, this.offsetY * this.dpr);
+    // compute centered grid origin in device pixels
+    const gridPixel = this.gridSize * this.tileSize * this.scale * this.dpr;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const left = cx - gridPixel / 2;
+    const top = cy - gridPixel / 2;
 
-    const gridPx = this.gridSize * this.tileSize;
+    // apply transform so drawing uses logical pixels (tileSize units)
+    ctx.setTransform(this.scale * this.dpr, 0, 0, this.scale * this.dpr, left, top);
 
     // background
     ctx.fillStyle = '#1e293b';
-    ctx.fillRect(0,0,gridPx,gridPx);
+    ctx.fillRect(0, 0, this.gridSize * this.tileSize, this.gridSize * this.tileSize);
 
-    // grid lines (single path)
+    // grid lines
     ctx.beginPath();
     ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.lineWidth = 1 / (this.scale * this.dpr);
-    for (let i=0;i<=this.gridSize;i++){
+    for (let i = 0; i <= this.gridSize; i++) {
       const p = i * this.tileSize + 0.5;
       ctx.moveTo(p, 0);
-      ctx.lineTo(p, gridPx);
+      ctx.lineTo(p, this.gridSize * this.tileSize);
       ctx.moveTo(0, p);
-      ctx.lineTo(gridPx, p);
+      ctx.lineTo(this.gridSize * this.tileSize, p);
     }
     ctx.stroke();
 
     // selected tiles
-    if (this.selected.size){
+    if (this.selected.size) {
       ctx.fillStyle = 'rgba(34,197,94,0.45)';
-      for (const k of this.selected){
-        const [sx,sy] = k.split(',').map(Number);
+      for (const k of this.selected) {
+        const [sx, sy] = k.split(',').map(Number);
         if (!Number.isFinite(sx) || !Number.isFinite(sy)) continue;
-        ctx.fillRect(sx*this.tileSize, sy*this.tileSize, this.tileSize, this.tileSize);
+        ctx.fillRect(sx * this.tileSize, sy * this.tileSize, this.tileSize, this.tileSize);
       }
     }
 
     // hover
-    if (this.hover){
+    if (this.hover) {
       const {x,y} = this.hover;
-      if (Number.isInteger(x) && Number.isInteger(y)){
+      if (Number.isInteger(x) && Number.isInteger(y)) {
         ctx.fillStyle = 'rgba(59,130,246,0.28)';
-        ctx.fillRect(x*this.tileSize, y*this.tileSize, this.tileSize, this.tileSize);
+        ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
       }
     }
 
-    // selection box (if implemented)
-    if (this.isSelecting && this.selectStart && this.selectEnd){
-      const x1 = Math.min(this.selectStart.x, this.selectEnd.x);
-      const y1 = Math.min(this.selectStart.y, this.selectEnd.y);
-      const x2 = Math.max(this.selectStart.x, this.selectEnd.x);
-      const y2 = Math.max(this.selectStart.y, this.selectEnd.y);
+    // drag selection box (draw in logical coords)
+    if (this.isDragging && this.dragStart && this.dragEnd) {
+      const s = this.dragStart || {x:-1,y:-1};
+      const e = this.dragEnd || {x:-1,y:-1};
+      // clamp to grid bounds for drawing
+      const sx = Math.max(0, Math.min(this.gridSize-1, s.x));
+      const sy = Math.max(0, Math.min(this.gridSize-1, s.y));
+      const ex = Math.max(0, Math.min(this.gridSize-1, e.x));
+      const ey = Math.max(0, Math.min(this.gridSize-1, e.y));
+      const x1 = Math.min(sx, ex), y1 = Math.min(sy, ey);
+      const x2 = Math.max(sx, ex), y2 = Math.max(sy, ey);
       ctx.fillStyle = 'rgba(59,130,246,0.18)';
-      ctx.fillRect(x1*this.tileSize, y1*this.tileSize, (x2-x1+1)*this.tileSize, (y2-y1+1)*this.tileSize);
+      ctx.fillRect(x1 * this.tileSize, y1 * this.tileSize, (x2 - x1 + 1) * this.tileSize, (y2 - y1 + 1) * this.tileSize);
       ctx.strokeStyle = 'rgba(59,130,246,0.6)';
       ctx.lineWidth = 1 / (this.scale * this.dpr);
-      ctx.strokeRect(x1*this.tileSize+0.5, y1*this.tileSize+0.5, (x2-x1+1)*this.tileSize-1, (y2-y1+1)*this.tileSize-1);
+      ctx.strokeRect(x1 * this.tileSize + 0.5, y1 * this.tileSize + 0.5, (x2 - x1 + 1) * this.tileSize - 1, (y2 - y1 + 1) * this.tileSize - 1);
     }
   }
 }
 
 /* ====== Init ====== */
 document.addEventListener('DOMContentLoaded', () => {
-  const canvas = document.getElementById('mobileCanvas');
-  const grid = new CanvasGridMobile(canvas, { gridSize: 40, tileSize: 20, scale: 1 });
+  const canvas = document.getElementById('portraitCanvas');
+  const grid = new PortraitGrid(canvas, { gridSize: 40, tileSize: 20, scale: 1 });
 
   // UI hooks
   document.getElementById('clearBtn').addEventListener('click', () => grid.clear());
   document.getElementById('selectAllBtn').addEventListener('click', () => grid.selectAll());
 
   // expose for debugging
-  window.__TonCanvasMobile = grid;
+  window.__TonCanvasPortrait = grid;
 });
 
-/* ====== small helper to update pos label ====== */
+/* ====== helper to update pos label ====== */
 function _updatePosLabel(tile){
   const el = document.getElementById('posLabel');
   if (!el) return;
