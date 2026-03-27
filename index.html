@@ -1,35 +1,18 @@
-<script>
-const canvas = document.getElementById('appCanvas');
-const ctx = canvas.getContext('2d');
-
-const GRID_SIZE = 50;
-const TILE_SIZE = 20;
-
-let scale = 1;
-let offsetX = 0;
-let offsetY = 0;
-
-let hoverTile = null;
-let selectedTiles = new Set();
-
-let isSelecting = false;
-let selectStart = null;
-let selectEnd = null;
-
-let isPanning = false;
-let panStart = null;
-
-/* ===== DRAW ===== */
 function draw() {
+  /* RESET TRANSFORM */
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  /* CLEAR FULL CANVAS */
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  /* APPLY CAMERA */
   ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
 
-  ctx.clearRect(-offsetX/scale, -offsetY/scale, canvas.width/scale, canvas.height/scale);
-
-  /* Background */
+  /* BACKGROUND */
   ctx.fillStyle = "#1e293b";
-  ctx.fillRect(0, 0, GRID_SIZE*TILE_SIZE, GRID_SIZE*TILE_SIZE);
+  ctx.fillRect(0, 0, GRID_SIZE * TILE_SIZE, GRID_SIZE * TILE_SIZE);
 
-  /* Grid */
+  /* GRID */
   ctx.strokeStyle = "rgba(255,255,255,0.08)";
   for (let x = 0; x < GRID_SIZE; x++) {
     for (let y = 0; y < GRID_SIZE; y++) {
@@ -37,20 +20,20 @@ function draw() {
     }
   }
 
-  /* Selected tiles */
+  /* SELECTED */
   ctx.fillStyle = "rgba(34,197,94,0.5)";
   selectedTiles.forEach(key => {
     const [x, y] = key.split(',').map(Number);
     ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
   });
 
-  /* Hover */
+  /* HOVER */
   if (hoverTile) {
     ctx.fillStyle = "rgba(59,130,246,0.3)";
     ctx.fillRect(hoverTile.x*TILE_SIZE, hoverTile.y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
   }
 
-  /* Selection box */
+  /* SELECTION BOX */
   if (isSelecting && selectStart && selectEnd) {
     const x1 = Math.min(selectStart.x, selectEnd.x);
     const y1 = Math.min(selectStart.y, selectEnd.y);
@@ -66,87 +49,3 @@ function draw() {
     );
   }
 }
-
-/* ===== GET TILE ===== */
-function getTile(e) {
-  const rect = canvas.getBoundingClientRect();
-  const x = (e.clientX - rect.left - offsetX) / scale;
-  const y = (e.clientY - rect.top - offsetY) / scale;
-
-  return {
-    x: Math.floor(x / TILE_SIZE),
-    y: Math.floor(y / TILE_SIZE)
-  };
-}
-
-/* ===== MOUSE MOVE ===== */
-canvas.addEventListener('mousemove', (e) => {
-  if (isPanning) {
-    offsetX += e.movementX;
-    offsetY += e.movementY;
-    draw();
-    return;
-  }
-
-  const tile = getTile(e);
-  hoverTile = tile;
-
-  if (isSelecting) {
-    selectEnd = tile;
-  }
-
-  draw();
-});
-
-/* ===== MOUSE DOWN ===== */
-canvas.addEventListener('mousedown', (e) => {
-  const tile = getTile(e);
-
-  if (e.button === 2) {
-    isPanning = true;
-    return;
-  }
-
-  isSelecting = true;
-  selectStart = tile;
-  selectEnd = tile;
-});
-
-/* ===== MOUSE UP ===== */
-canvas.addEventListener('mouseup', () => {
-  if (isSelecting && selectStart && selectEnd) {
-    const x1 = Math.min(selectStart.x, selectEnd.x);
-    const y1 = Math.min(selectStart.y, selectEnd.y);
-    const x2 = Math.max(selectStart.x, selectEnd.x);
-    const y2 = Math.max(selectStart.y, selectEnd.y);
-
-    for (let x = x1; x <= x2; x++) {
-      for (let y = y1; y <= y2; y++) {
-        selectedTiles.add(`${x},${y}`);
-      }
-    }
-  }
-
-  isSelecting = false;
-  isPanning = false;
-
-  draw();
-});
-
-/* ===== ZOOM ===== */
-canvas.addEventListener('wheel', (e) => {
-  e.preventDefault();
-
-  const zoom = e.deltaY < 0 ? 1.1 : 0.9;
-  scale *= zoom;
-  scale = Math.max(0.5, Math.min(scale, 4));
-
-  draw();
-});
-
-/* ===== DISABLE RIGHT CLICK MENU ===== */
-canvas.addEventListener('contextmenu', e => e.preventDefault());
-
-/* INIT */
-draw();
-</script>
