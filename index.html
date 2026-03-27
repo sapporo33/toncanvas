@@ -2,195 +2,249 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TonCanvas | Web3 Ad Space</title>
-
-    <!-- Telegram -->
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <!-- TON CONNECT (FIX: pakai defer) -->
-    <script defer src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
     <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --primary: #0088cc;
+            --accent: #22c55e;
+            --text: #f8fafc;
+            --border: #334155;
+        }
+
         body {
-            margin: 0;
-            background: #0f172a;
-            color: white;
-            font-family: sans-serif;
+            margin: 0; background: var(--bg); color: var(--text);
+            font-family: -apple-system, system-ui, sans-serif;
+            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
         }
 
         header {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px;
-            background: #1e293b;
-            align-items: center;
+            padding: 10px 15px; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 1px solid var(--border);
+            background: #1e293b; z-index: 100; min-height: 70px;
         }
 
-        #ton-connect-btn {
-            min-width: 160px;
+        .logo { font-weight: 800; font-size: 1.1rem; color: white; text-decoration: none; }
+        .logo span { color: var(--primary); }
+
+        /* Container untuk Button TON Connect */
+        #ton-connect-btn { 
+            min-width: 150px;
             display: flex;
             justify-content: flex-end;
         }
 
-        canvas {
-            display: block;
-            margin: 20px auto;
-            border: 2px solid #0088cc;
+        main {
+            flex: 1; overflow: auto; display: flex; justify-content: center;
+            align-items: flex-start; padding: 20px; background: #0b1120;
         }
 
-        .panel {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+        .canvas-container {
+            position: relative; 
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
             background: #1e293b;
-            padding: 20px;
-            border-radius: 12px;
+        }
+
+        canvas { display: block; touch-action: none; cursor: crosshair; }
+
+        .panel {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 380px; background: var(--card);
+            border: 1px solid var(--primary); border-radius: 16px; padding: 20px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 1000;
             display: none;
         }
 
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 10px; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
         input {
-            width: 100%;
-            margin-bottom: 10px;
-            padding: 10px;
+            width: 100%; background: #0f172a; border: 1px solid var(--border);
+            color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;
+            outline: none;
         }
 
-        button {
-            padding: 12px;
-            width: 100%;
-            background: #22c55e;
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
+        .btn-mint {
+            width: 100%; padding: 14px; background: var(--accent);
+            color: white; border: none; border-radius: 12px; font-weight: bold;
+            cursor: pointer; font-size: 15px; margin-top: 10px;
+        }
+
+        #status-bar {
+            background: var(--primary); color: white; font-size: 11px;
+            padding: 6px; text-align: center; letter-spacing: 0.5px;
         }
     </style>
 </head>
-
 <body>
 
 <header>
-    <b>TONCANVAS</b>
+    <a href="#" class="logo">TON<span>CANVAS</span></a>
     <div id="ton-connect-btn"></div>
 </header>
 
-<canvas id="appCanvas" width="400" height="400"></canvas>
+<div id="status-bar">SELECT A TILE TO ADVERTISE YOUR PROJECT</div>
+
+<main>
+    <div class="canvas-container">
+        <canvas id="appCanvas" width="800" height="800"></canvas>
+    </div>
+</main>
 
 <div class="panel" id="uiPanel">
-    <div id="coordLabel">(0,0)</div>
-    <input id="imgUrl" placeholder="Image URL">
-    <input id="targetLink" placeholder="Redirect URL">
-    <button id="mintBtn" onclick="processPayment()">MINT 0.5 TON</button>
+    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <span id="coordLabel" style="font-weight: 800; color: var(--accent); font-size: 1.1rem;">(0,0)</span>
+        <button onclick="hidePanel()" style="background:#334155; border:none; color:white; width:30px; height:30px; border-radius:50%; cursor:pointer;">✕</button>
+    </div>
+    
+    <div class="input-group">
+        <label>Image URL</label>
+        <input type="text" id="imgUrl" placeholder="https://image.link/logo.png">
+    </div>
+    <div class="input-group">
+        <label>Redirect Link</label>
+        <input type="text" id="targetLink" placeholder="https://t.me/your_bot">
+    </div>
+    
+    <button class="btn-mint" id="mintBtn" onclick="processPayment()">MINT TILE (0.5 TON)</button>
 </div>
 
 <script>
-let tonConnectUI;
-let selected = null;
+    // --- GLOBAL VARIABLES ---
+    let tonConnectUI;
+    const canvas = document.getElementById('appCanvas');
+    const ctx = canvas.getContext('2d');
+    const panel = document.getElementById('uiPanel');
+    const gridSize = 40; 
+    const tileSize = canvas.width / gridSize;
+    let selected = null;
+    let tilesData = {}; 
 
-const canvas = document.getElementById('appCanvas');
-const ctx = canvas.getContext('2d');
+    // --- 1. INITIALIZATION ---
+    async function initApp() {
+        // Init Telegram
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
 
-const gridSize = 10;
-const tileSize = canvas.width / gridSize;
+        // Init TON Connect (Hanya panggil SATU kali)
+        try {
+            tonConnectUI = new TONConnectUI.TonConnectUI({
+                manifestUrl: 'https://toncanvas.vercel.app/tonconnect-manifest.json',
+                buttonRootId: 'ton-connect-btn'
+            });
+            console.log("TON Connect Initialized");
+        } catch (e) {
+            console.error("TON Connect failed:", e);
+        }
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        draw();
+    }
 
-    for (let x = 0; x < gridSize; x++) {
-        for (let y = 0; y < gridSize; y++) {
-            ctx.strokeStyle = "gray";
-            ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
+    // --- 2. DRAWING ---
+    function draw() {
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; y < gridSize; y++) {
+                const key = `${x}_${y}`;
+                if (tilesData[key]) {
+                    ctx.fillStyle = tilesData[key].color;
+                    ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                }
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
+            }
+        }
+
+        if (selected) {
+            ctx.fillStyle = "rgba(34, 197, 94, 0.3)";
+            ctx.fillRect(selected.x * tileSize, selected.y * tileSize, tileSize, tileSize);
+            ctx.strokeStyle = "#22c55e";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(selected.x * tileSize, selected.y * tileSize, tileSize, tileSize);
         }
     }
 
-    if (selected) {
-        ctx.fillStyle = "rgba(34,197,94,0.5)";
-        ctx.fillRect(selected.x * tileSize, selected.y * tileSize, tileSize, tileSize);
-    }
-}
+    // --- 3. INTERACTION ---
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = Math.floor(((e.clientX - rect.left) * scaleX) / tileSize);
+        const y = Math.floor(((e.clientY - rect.top) * scaleY) / tileSize);
 
-canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / tileSize);
-    const y = Math.floor((e.clientY - rect.top) / tileSize);
-
-    selected = { x, y };
-
-    document.getElementById('coordLabel').innerText = `Tile: ${x}, ${y}`;
-    document.getElementById('uiPanel').style.display = 'block';
-
-    draw();
-});
-
-async function processPayment() {
-    if (!tonConnectUI) {
-        alert("TON Connect belum siap");
-        return;
-    }
-
-    if (!tonConnectUI.connected) {
-        tonConnectUI.openModal();
-        return;
-    }
-
-    const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 300,
-        messages: [
-            {
-                address: "UQDZDbDI-vjbkEpviXoWXuAc3dTHG-MiYC8gi5tYnHxXMLDd",
-                amount: "500000000"
+        if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+            selected = { x, y };
+            document.getElementById('coordLabel').innerText = `TILE: ${x}, ${y}`;
+            panel.style.display = 'block';
+            draw();
+            if (window.Telegram?.WebApp?.HapticFeedback) {
+                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
             }
-        ]
-    };
+        }
+    });
 
-    try {
-        document.getElementById('mintBtn').innerText = "PROCESSING...";
-
-        await tonConnectUI.sendTransaction(transaction);
-
-        alert("SUCCESS!");
-    } catch (e) {
-        console.error(e);
-        alert("FAILED");
-    } finally {
-        document.getElementById('mintBtn').innerText = "MINT 0.5 TON";
-    }
-}
-
-function waitForTON() {
-    if (window.TONConnectUI) {
-        initTon();
-    } else {
-        console.log("Waiting TON...");
-        setTimeout(waitForTON, 200);
-    }
-}
-
-function initTon() {
-    try {
-        tonConnectUI = new TONConnectUI({
-            manifestUrl: 'https://toncanvas.vercel.app/tonconnect-manifest.json',
-            buttonRootId: 'ton-connect-btn'
-        });
-
-        console.log("TON READY");
-    } catch (e) {
-        console.error("TON ERROR:", e);
-    }
-}
-
-window.addEventListener('load', () => {
-    draw();
-
-    if (window.Telegram?.WebApp) {
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
+    function hidePanel() {
+        panel.style.display = 'none';
+        selected = null;
+        draw();
     }
 
-    waitForTON(); // FIX PENTING
-});
+    // --- 4. PAYMENT LOGIC ---
+    async function processPayment() {
+        if (!tonConnectUI || !tonConnectUI.connected) {
+            alert("Please connect your wallet first!");
+            if(tonConnectUI) tonConnectUI.openModal();
+            return;
+        }
+
+        const img = document.getElementById('imgUrl').value;
+        const link = document.getElementById('targetLink').value;
+
+        if (!img || !link) {
+            alert("Fill image and redirect links.");
+            return;
+        }
+
+        const transaction = {
+            validUntil: Math.floor(Date.now() / 1000) + 360,
+            messages: [{
+                address: "UQDZDbDI-vjbkEpviXoWXuAc3dTHG-MiYC8gi5tYnHxXMLDd",
+                amount: "500000000" // 0.5 TON
+            }]
+        };
+
+        try {
+            document.getElementById('mintBtn').innerText = "AWAITING WALLET...";
+            document.getElementById('mintBtn').disabled = true;
+
+            await tonConnectUI.sendTransaction(transaction);
+            
+            const key = `${selected.x}_${selected.y}`;
+            tilesData[key] = { color: '#22c55e', img, link }; 
+            alert("Mint successful!");
+            hidePanel();
+        } catch (e) {
+            console.error(e);
+            alert("Transaction failed.");
+        } finally {
+            document.getElementById('mintBtn').innerText = "MINT FOR 0.5 TON";
+            document.getElementById('mintBtn').disabled = false;
+        }
+    }
+
+    // Jalankan inisialisasi saat window load
+    window.addEventListener('load', initApp);
 </script>
-
 </body>
 </html>
