@@ -5,34 +5,3 @@
   "termsOfServiceUrl": "https://toncanvas.vercel.app/terms",
   "privacyPolicyUrl": "https://toncanvas.vercel.app/privacy"
 }
-let tonConnectUI;
-
-async function initTonConnect() {
-    const btnContainer = document.getElementById('ton-connect-btn');
-    
-    // Cek apakah kontainer sudah ada di DOM
-    if (!btnContainer) {
-        setTimeout(initTonConnect, 100); // Coba lagi dalam 100ms
-        return;
-    }
-
-    try {
-        // Inisialisasi SDK
-        tonConnectUI = new TONConnectUI.TonConnectUI({
-            // PENTING: Arahkan ke file manifest yang Anda buat di langkah 1
-            manifestUrl: 'https://toncanvas.vercel.app/tonconnect-manifest.json', 
-            buttonRootId: 'ton-connect-btn'
-        });
-
-        console.log("TON Connect Initialized");
-    } catch (e) {
-        console.error("TON Connect Error:", e);
-    }
-}
-
-// Jalankan fungsi
-initTonConnect();
-<script type="module">
-    import TonConnectUI from 'https://cdn.skypack.dev/@tonconnect/ui';
-    window.TonConnectUI = TonConnectUI;
-</script>
