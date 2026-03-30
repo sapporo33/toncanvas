@@ -16,13 +16,14 @@
           <div id="username" class="name">User</div>
         </div>
       </div>
-      <div>🔔</div>
+      <div class="notif">🔔</div>
     </header>
 
     <section class="balance-card">
       <div class="left">
         <h2>Total Balance</h2>
         <div id="balance" class="amount">0.00 TON</div>
+        <div class="kicker">Ready to withdraw anytime</div>
       </div>
       <div class="actions">
         <button class="small-btn" type="button" onclick="showPage('withdraw')">Withdraw</button>
@@ -35,7 +36,7 @@
     </div>
 
     <div class="tasks">
-      <!-- Telegram task uses tgBtn id for compatibility with existing JS -->
+      <!-- Telegram task (keamanan: keep id tgBtn for legacy app.js) -->
       <article class="card">
         <div class="task-left">
           <div class="icon">📩</div>
@@ -51,7 +52,7 @@
         </button>
       </article>
 
-      <!-- Twitter task (ke HTML baru tapi JS supports legacy signature) -->
+      <!-- Twitter task (calls new signature but app.js supports legacy) -->
       <article class="card">
         <div class="task-left">
           <div class="icon">🐦</div>
@@ -101,6 +102,7 @@
     <button type="button" onclick="showPage('withdraw')">WD</button>
   </nav>
 
+  <!-- Script order: app.js first, then ui-sync.js -->
   <script src="app.js"></script>
   <script src="ui-sync.js"></script>
 </body>
