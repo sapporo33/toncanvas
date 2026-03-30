@@ -117,7 +117,7 @@
     <section id="home" class="page active">
         <div class="card" style="text-align: center;">
             <p>Total Balance</p>
-            <div class="stat-val" id="balance">0 $TURBO</div>
+            <div class="stat-val" id="balance">0 $TON</div>
         </div>
         <div class="card">
             <h3>Welcome!</h3>
@@ -129,11 +129,11 @@
         <h2>Task </h2>
         <div class="btn-task" onclick="completeTask('tg', 'https://t.me/TonTurboOfficial')">
             <span>Follow Telegram Channel</span>
-            <span id="status-tg" class="status-badge">+50 $TURBO</span>
+            <span id="status-tg" class="status-badge">+1 $TON</span>
         </div>
         <div class="btn-task" onclick="completeTask('x', 'https://x.com/tonturboxyz')">
             <span>Follow X (Twitter)</span>
-            <span id="status-x" class="status-badge">+50 $TURBO</span>
+            <span id="status-x" class="status-badge">+1 $TON</span>
         </div>
     </section>
 
@@ -189,7 +189,7 @@
 
     function completeTask(type, url) {
         if (completedTasks[type]) {
-            tg.showAlert("Tugas ini sudah selesai!");
+            tg.showAlert("This task is complete!");
             window.open(url, '_blank');
             return;
         }
@@ -208,15 +208,15 @@
 
     function updateUI(type) {
         const badge = document.getElementById('status-' + type);
-        badge.innerText = "Selesai ✅";
+        badge.innerText = "Finished! ✅";
         badge.style.background = "#22c55e";
     }
 
     function calculateBalance() {
         balance = 0;
-        if(completedTasks.tg) balance += 50;
-        if(completedTasks.x) balance += 50;
-        document.getElementById('balance').innerText = balance + " $TURBO";
+        if(completedTasks.tg) balance += 1;
+        if(completedTasks.x) balance += 1;
+        document.getElementById('balance').innerText = balance + " $TON";
     }
 
     init();
