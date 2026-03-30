@@ -1,18 +1,26 @@
-let balance = 0;
+// ================= LOAD DATA =================
+let balance = parseFloat(localStorage.getItem("balance")) || 0;
 
-// STATE TASK (anti spam basic)
-let taskState = {
+let taskState = JSON.parse(localStorage.getItem("taskState")) || {
   telegram: {
     started: false,
     claimed: false
   }
 };
 
+// ================= SAVE =================
+function saveData() {
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("taskState", JSON.stringify(taskState));
+}
+
+// ================= NAV =================
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
+// ================= BALANCE =================
 function updateBalance() {
   document.getElementById('balance').innerText = balance.toFixed(2) + ' TON';
 }
@@ -20,11 +28,10 @@ function updateBalance() {
 // ================= TELEGRAM TASK =================
 function startTask(url, amount) {
 
-  // ==== TELEGRAM TASK ====
+  // ==== TELEGRAM ====
   if (url.includes("t.me")) {
 
-    const buttons = document.querySelectorAll('.card button');
-    const btn = buttons[0]; // tombol pertama = telegram
+    const btn = document.querySelectorAll('.card button')[0];
 
     // START
     if (!taskState.telegram.started) {
@@ -36,6 +43,7 @@ function startTask(url, amount) {
       }
 
       taskState.telegram.started = true;
+      saveData();
 
       btn.innerText = "Claim";
       return;
@@ -54,6 +62,7 @@ function startTask(url, amount) {
       taskState.telegram.claimed = true;
 
       balance += 0.25;
+      saveData();
       updateBalance();
 
       btn.innerText = "Done";
@@ -66,11 +75,12 @@ function startTask(url, amount) {
     return;
   }
 
-  // ==== TWITTER TASK (BIARKAN SIMPLE) ====
+  // ==== TWITTER ====
   window.open(url, '_blank');
 
   setTimeout(() => {
     balance += amount;
+    saveData();
     updateBalance();
     alert('Reward +' + amount + ' TON');
   }, 1500);
@@ -84,6 +94,7 @@ function inviteTask() {
   alert("Link referral disalin!");
 
   balance += 0.1;
+  saveData();
   updateBalance();
 }
 
@@ -96,9 +107,27 @@ function withdraw() {
   if (val > balance) return alert('Saldo tidak cukup');
 
   balance -= val;
+  saveData();
   updateBalance();
+
   alert('Withdraw berhasil');
 }
+
+// ================= INIT =================
+function initApp() {
+  updateBalance();
+
+  const btn = document.querySelectorAll('.card button')[0];
+
+  if (taskState.telegram.claimed) {
+    btn.innerText = "Done";
+    btn.disabled = true;
+  } else if (taskState.telegram.started) {
+    btn.innerText = "Claim";
+  }
+}
+
+initApp();
 
 // ================= TELEGRAM USER =================
 if (window.Telegram?.WebApp) {
