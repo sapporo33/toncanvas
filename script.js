@@ -37,38 +37,77 @@ function updateBalance() {
   if (el) el.innerText = balance.toFixed(2) + ' TON';
 }
 
-// TASK (exposed globally so HTML onclick works)
+/*
+  startTask supports two call styles:
+  1) startTask(url, amount)                <-- original
+  2) startTask(taskId, url, amount)        <-- newer HTML patterns
+*/
 window.startTask = function(url, amount) {
-  console.log('startTask', { url, amount, taskState });
+  // detect if caller used (taskId, url, amount)
+  let taskId = null;
+  let realUrl = url;
+  let realAmount = amount;
 
-  if (typeof url === 'string' && url.includes('t.me')) {
-    const btn = document.getElementById('tgBtn');
+  // If second argument is a string and looks like a URL, then caller likely used (taskId, url, amount)
+  if (typeof amount === 'string' && (amount.startsWith('http') || amount.includes('t.me') || amount.includes('x.com') || amount.includes('twitter.com'))) {
+    taskId = url;           // first param is taskId
+    realUrl = amount;       // second param is url
+    realAmount = arguments[2]; // third param is amount (may be undefined)
+  }
 
-    if (taskState.telegram.claimed === true) {
+  // If still no taskId, default to 'telegram' (keeps original behavior)
+  if (!taskId) taskId = 'telegram';
+
+  console.log('startTask', { taskId, realUrl, realAmount, taskState });
+
+  // TELEGRAM-like tasks (detect by t.me or taskId === 'telegram' or taskId contains 'telegram')
+  const isTelegramLink = typeof realUrl === 'string' && realUrl.includes('t.me');
+  const isTelegramTaskId = typeof taskId === 'string' && taskId.toLowerCase().includes('telegram');
+
+  if (isTelegramLink || isTelegramTaskId) {
+    // try to find button: prefer btn-<taskId> if exists, fallback to tgBtn
+    const btnById = document.getElementById('btn-' + taskId);
+    const btnFallback = document.getElementById('tgBtn');
+    const btn = btnById || btnFallback;
+
+    // HARD LOCK
+    if (taskState.telegram.claimed) {
       if (btn) { btn.innerText = 'Done'; btn.disabled = true; }
       alert('Task sudah selesai');
       return;
     }
 
-    if (taskState.telegram.started === false) {
-      if (window.Telegram?.WebApp) {
-        try { Telegram.WebApp.openTelegramLink(url); } catch (e) { window.open(url, '_blank'); }
+    // START
+    if (!taskState.telegram.started) {
+      if (isTelegramLink && window.Telegram?.WebApp) {
+        try { Telegram.WebApp.openTelegramLink(realUrl); } catch (e) { window.open(realUrl, '_blank'); }
+      } else if (isTelegramLink) {
+        window.open(realUrl, '_blank');
       } else {
-        window.open(url, '_blank');
+        // no link available, just proceed to mark started (keeps behavior safe)
       }
+
       taskState.telegram.started = true;
       saveData();
+
       if (btn) btn.innerText = 'Claim';
       return;
     }
 
+    // CLAIM
     if (taskState.telegram.started === true && taskState.telegram.claimed === false) {
-      if (!confirm('Sudah join channel?')) return alert('Kamu belum join!');
+      if (!confirm('Sudah join channel?')) {
+        alert('Kamu belum join!');
+        return;
+      }
+
       taskState.telegram.claimed = true;
       balance += 0.25;
       saveData();
       updateBalance();
+
       if (btn) { btn.innerText = 'Done'; btn.disabled = true; }
+
       alert('Reward +0.25 TON');
       return;
     }
@@ -77,12 +116,12 @@ window.startTask = function(url, amount) {
   }
 
   // fallback (twitter/others)
-  try { window.open(url, '_blank'); } catch (e) { console.error(e); }
+  try { window.open(realUrl, '_blank'); } catch (e) { console.error(e); }
   setTimeout(() => {
-    balance += (typeof amount === 'number' ? amount : 0);
+    balance += (typeof realAmount === 'number' ? realAmount : 0);
     saveData();
     updateBalance();
-    alert('Reward +' + amount + ' TON');
+    alert('Reward +' + (realAmount || 0) + ' TON');
   }, 1500);
 };
 
