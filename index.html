@@ -221,6 +221,106 @@
 
     init();
 </script>
+<style>
+    /* ... kode CSS sebelumnya ... */
 
+    .profile-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 15px;
+        border-radius: 15px;
+        margin-bottom: 20px;
+        border: 1px dashed rgba(56, 189, 248, 0.3);
+    }
+
+    #user-photo {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 2px solid var(--primary-color);
+        background-color: #334155;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+    }
+
+    #user-name {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+
+    #user-username {
+        color: var(--primary-color);
+        font-size: 0.9rem;
+    }
+</style>
+
+<section id="home" class="page active">
+    <div class="profile-container">
+        <img id="user-photo" src="https://via.placeholder.com/60" alt="User Photo">
+        <div class="user-details">
+            <span id="user-name">Loading...</span>
+            <span id="user-username">@username</span>
+        </div>
+    </div>
+
+    <div class="card" style="text-align: center;">
+        <p>Total Balance</p>
+        <div class="stat-val" id="balance">0 $TURBO</div>
+    </div>
+    
+    <div class="card">
+        <h3>Selamat Datang!</h3>
+        <p>Selesaikan tugas untuk mengumpulkan token $TURBO sebelum listing.</p>
+    </div>
+</section>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    // Fungsi untuk mengambil data user Telegram
+    function loadUserData() {
+        const user = tg.initDataUnsafe.user;
+
+        if (user) {
+            // Set Nama Lengkap
+            document.getElementById('user-name').innerText = `${user.first_name} ${user.last_name || ''}`;
+            
+            // Set Username
+            if (user.username) {
+                document.getElementById('user-username').innerText = `@${user.username}`;
+            } else {
+                document.getElementById('user-username').innerText = "No Username";
+            }
+
+            // Set Foto Profil (Jika ada)
+            if (user.photo_url) {
+                document.getElementById('user-photo').src = user.photo_url;
+            }
+        } else {
+            // Fallback jika dibuka di luar Telegram
+            document.getElementById('user-name').innerText = "Guest User";
+            document.getElementById('user-username').innerText = "@guest";
+        }
+    }
+
+    // Panggil fungsi loadUserData di dalam init
+    function init() {
+        loadUserData(); // Tambahkan ini
+        if(completedTasks.tg) updateUI('tg');
+        if(completedTasks.x) updateUI('x');
+        calculateBalance();
+    }
+
+    // ... sisanya kode JS sebelumnya ...
+    init();
+</script>
+    
 </body>
 </html>
