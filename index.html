@@ -5,40 +5,271 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Miniapp TON</title>
   <style>
-    /* styling minimal agar tidak cuma teks polos */
-    body { font-family: system-ui, Arial; padding: 20px; }
-    .btn { padding: 8px 12px; margin: 6px 0; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:system-ui, Arial; background:#f3f4f6; color:#111; }
+    .container { padding:16px; padding-bottom:90px; max-width:720px; margin:0 auto; }
+    .header { display:flex; justify-content:space-between; align-items:center; }
+    .profile { display:flex; align-items:center; gap:10px; }
+    .profile img { width:40px; height:40px; border-radius:50%; display:block; }
+    .balance-card { background:linear-gradient(135deg,#000,#111); color:#fff; padding:20px; border-radius:16px; margin:16px 0; }
+    .card { background:#fff; padding:12px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .task-left { display:flex; gap:10px; align-items:center; }
+    .icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; background:#eef2ff; }
+    .btn { background:#111; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    .btn[disabled] { opacity:0.5; cursor:not-allowed; }
+    .nav { position:fixed; bottom:0; left:0; right:0; background:#fff; display:flex; justify-content:space-around; padding:10px 0; border-top:1px solid #ddd; }
+    .page { display:none; padding-top:12px; }
+    .page.active { display:block; }
+    input[type="number"], input[type="text"] { padding:8px; border-radius:8px; border:1px solid #ccc; width:160px; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Miniapp TON</h1>
-    <div>
-      <strong>Pengguna:</strong>
-      <span id="username">-</span>
-      <img id="avatar" src="" alt="" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;margin-left:8px;display:none;">
+  <div class="container">
+    <div id="home" class="page active">
+      <div class="header">
+        <div class="profile">
+          <img id="avatar" src="https://via.placeholder.com/40" alt="avatar">
+          <div>
+            <div style="font-size:13px;color:#666">Welcome back</div>
+            <b id="username">User</b>
+          </div>
+        </div>
+        <div>🔔</div>
+      </div>
+
+      <div class="balance-card">
+        <h3 style="margin:0 0 6px 0">Total Balance (TON)</h3>
+        <h1 id="balance" style="margin:0">0.00 TON</h1>
+      </div>
+
+      <h4>Pending Tasks</h4>
+
+      <!-- Telegram task -->
+      <div class="card">
+        <div class="task-left">
+          <div class="icon">📩</div>
+          <div>
+            <div>Ton Turbo Official</div>
+            <small>Telegram Channel (+0.25 TON)</small>
+          </div>
+        </div>
+        <button id="btn-telegram_channel" class="btn" type="button"
+          onclick="startTask('telegram_channel','https://t.me/TonTurboOfficial',0.25)">
+          Start
+        </button>
+      </div>
+
+      <!-- Twitter task -->
+      <div class="card">
+        <div class="task-left">
+          <div class="icon">🐦</div>
+          <div>
+            <div>Ton Turbo Official</div>
+            <small>Twitter Follow (+0.25 TON)</small>
+          </div>
+        </div>
+        <button id="btn-twitter_follow" class="btn" type="button"
+          onclick="startTask('twitter_follow','https://x.com/tonturboxyz',0.25)">
+          Start
+        </button>
+      </div>
+
+      <!-- Invite task -->
+      <div class="card">
+        <div class="task-left">
+          <div class="icon">👥</div>
+          <div>
+            <div>Invite Friend</div>
+            <small>+0.10 TON</small>
+          </div>
+        </div>
+        <button id="btn-invite" class="btn" type="button" onclick="startTask('invite','',0.1)">
+          Start
+        </button>
+      </div>
     </div>
-  </header>
 
-  <main>
-    <section>
-      <div><strong>Saldo:</strong> <span id="balance">0.00 TON</span></div>
-    </section>
+    <div id="task" class="page"><h2>Task Center</h2></div>
+    <div id="leaderboard" class="page"><h2>Leaderboard</h2></div>
+    <div id="referral" class="page"><h2>Referral</h2></div>
 
-    <section style="margin-top:12px;">
-      <!-- Pastikan onclick memanggil startTask dan tombol bertipe button -->
-      <button id="tgBtn" class="btn" type="button" onclick="startTask('https://t.me/your_channel', 0.25)">Start</button>
-      <button class="btn" type="button" onclick="inviteTask()">Invite</button>
-    </section>
-
-    <section style="margin-top:12px;">
-      <input id="wd" type="number" placeholder="Jumlah withdraw" />
+    <div id="withdraw" class="page">
+      <h2>Withdraw</h2>
+      <input id="wd" type="number" placeholder="Jumlah">
       <button class="btn" type="button" onclick="withdraw()">Withdraw</button>
-    </section>
-  </main>
+    </div>
+  </div>
 
-  <!-- Panggil file JS di sini, sebelum penutupan body -->
-  <!-- Ganti "app.js" dengan nama file JS yang kamu deploy -->
-  <script src="/app.js"></script>
+  <div class="nav">
+    <button type="button" onclick="showPage('home')">Home</button>
+    <button type="button" onclick="showPage('task')">Task</button>
+    <button type="button" onclick="showPage('leaderboard')">Rank</button>
+    <button type="button" onclick="showPage('referral')">Ref</button>
+    <button type="button" onclick="showPage('withdraw')">WD</button>
+  </div>
+
+  <script>
+  // ====== SAFE LOAD ======
+  let balance = parseFloat(localStorage.getItem('balance')) || 0;
+
+  // taskState keyed per task so each task tracked separately
+  let taskState;
+  try {
+    taskState = JSON.parse(localStorage.getItem('taskState'));
+  } catch (e) {
+    taskState = null;
+  }
+  if (!taskState) {
+    taskState = {
+      telegram_channel: { started: false, claimed: false },
+      twitter_follow: { started: false, claimed: false },
+      invite: { claimed: false }
+    };
+  }
+
+  function saveData() {
+    try {
+      localStorage.setItem('balance', balance);
+      localStorage.setItem('taskState', JSON.stringify(taskState));
+      // console.log('saved', { balance, taskState });
+    } catch (e) {
+      console.error('Gagal menyimpan ke localStorage', e);
+    }
+  }
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  }
+
+  function updateBalance() {
+    const el = document.getElementById('balance');
+    if (el) el.innerText = balance.toFixed(2) + ' TON';
+  }
+
+  // Expose startTask globally so inline onclick works
+  window.startTask = function(taskId, url, amount) {
+    // invite is special: copy link + reward immediately (or keep claimed)
+    if (taskId === 'invite') {
+      const btn = document.getElementById('btn-invite');
+      if (taskState.invite.claimed) {
+        alert('Task invite sudah selesai');
+        if (btn) { btn.innerText = 'Done'; btn.disabled = true; }
+        return;
+      }
+      const link = 'https://t.me/your_bot?start=ref123';
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(link).catch(()=>{});
+      }
+      taskState.invite.claimed = true;
+      balance += (typeof amount === 'number' ? amount : 0.1);
+      saveData();
+      updateBalance();
+      if (btn) { btn.innerText = 'Done'; btn.disabled = true; }
+      alert('Link referral disalin! Reward +' + (amount || 0.1) + ' TON');
+      return;
+    }
+
+    // For social tasks (telegram/twitter)
+    const btn = document.getElementById('btn-' + taskId);
+    const state = taskState[taskId];
+    if (!state) {
+      console.warn('Unknown taskId', taskId);
+      return;
+    }
+
+    // If already claimed -> stop
+    if (state.claimed) {
+      alert('Task sudah selesai');
+      if (btn) { btn.innerText = 'Done'; btn.disabled = true; }
+      return;
+    }
+
+    // START: open link once
+    if (!state.started) {
+      if (typeof url === 'string' && url.includes('t.me') && window.Telegram?.WebApp) {
+        try { Telegram.WebApp.openTelegramLink(url); } catch (e) { window.open(url, '_blank'); }
+      } else if (typeof url === 'string' && url) {
+        window.open(url, '_blank');
+      } else {
+        // no url provided
+      }
+      state.started = true;
+      saveData();
+      if (btn) btn.innerText = 'Claim';
+      return;
+    }
+
+    // CLAIM: confirm then reward
+    if (state.started && !state.claimed) {
+      if (!confirm('Sudah melakukan tugas?')) {
+        alert('Kamu belum menyelesaikan tugas!');
+        return;
+      }
+      state.claimed = true;
+      balance += (typeof amount === 'number' ? amount : 0);
+      saveData();
+      updateBalance();
+      if (btn) { btn.innerText = 'Done'; btn.disabled = true; }
+      alert('Reward +' + (amount || 0) + ' TON');
+      return;
+    }
+  };
+
+  function inviteTask() {
+    // kept for backward compatibility if used elsewhere
+    startTask('invite','',0.1);
+  }
+
+  function withdraw() {
+    const input = document.getElementById('wd');
+    if (!input) return alert('Input withdraw tidak ditemukan');
+    const val = parseFloat(input.value);
+    if (isNaN(val)) return alert('Masukkan angka');
+    if (val <= 0) return alert('Harus lebih dari 0');
+    if (val > balance) return alert('Saldo tidak cukup');
+    balance -= val;
+    saveData();
+    updateBalance();
+    alert('Withdraw berhasil');
+  }
+
+  function initApp() {
+    updateBalance();
+
+    // update buttons state based on taskState
+    Object.keys(taskState).forEach(taskId => {
+      const state = taskState[taskId];
+      const btn = document.getElementById('btn-' + taskId);
+      if (!btn) return;
+      if (state.claimed) {
+        btn.innerText = 'Done';
+        btn.disabled = true;
+      } else if (state.started) {
+        btn.innerText = 'Claim';
+        btn.disabled = false;
+      } else {
+        btn.innerText = 'Start';
+        btn.disabled = false;
+      }
+    });
+
+    // Telegram WebApp user info (if available)
+    if (window.Telegram?.WebApp) {
+      try { window.Telegram.WebApp.expand(); } catch (e) {}
+      const user = window.Telegram.WebApp.initDataUnsafe?.user;
+      if (user) {
+        const uname = document.getElementById('username');
+        if (uname) uname.innerText = '@' + (user.username || user.first_name || 'User');
+        const avatar = document.getElementById('avatar');
+        if (avatar && user.photo_url) { avatar.src = user.photo_url; avatar.style.display = 'block'; }
+      }
+    }
+  }
+
+  // Run init after DOM ready
+  document.addEventListener('DOMContentLoaded', initApp);
+  </script>
 </body>
 </html>
