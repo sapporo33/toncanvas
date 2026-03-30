@@ -2,291 +2,426 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TonTurbo Airdrop</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
             --bg-color: #0f172a;
-            --container-bg: #1e293b;
-            --primary-color: #38bdf8;
-            --text-color: #f8fafc;
-            --accent-color: #0ea5e9;
-            --success-color: #22c55e;
+            --card-bg: #1e293b;
+            --primary: #38bdf8;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --accent: #0ea5e9;
+            --success: #22c55e;
             --gold: #fbbf24;
+            --silver: #94a3b8;
+            --bronze: #cd7f32;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: var(--text);
             margin: 0;
             padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
+        /* Layout Parts */
         header {
-            padding: 15px;
+            padding: 18px;
             text-align: center;
-            background: linear-gradient(135deg, var(--accent-color), var(--bg-color));
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, var(--accent), var(--bg-color));
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            z-index: 10;
         }
 
-        .profile-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(56, 189, 248, 0.2);
+        header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 2px; font-weight: 800; }
+
+        main {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            padding-bottom: 100px;
+            scroll-behavior: smooth;
         }
 
-        #user-photo { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--primary-color); }
-
-        main { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 90px; }
-        .page { display: none; animation: fadeIn 0.2s ease-in-out; }
+        /* Common Components */
+        .page { display: none; animation: slideUp 0.3s ease-out; }
         .active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         .card {
-            background-color: var(--container-bg);
-            padding: 18px;
-            border-radius: 16px;
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 18px;
             margin-bottom: 15px;
-            border: 1px solid #334155;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .stat-val { font-size: 1.8rem; font-weight: bold; color: var(--primary-color); }
+        .stat-val { font-size: 2rem; font-weight: 800; color: var(--primary); margin: 5px 0; }
 
-        /* Leaderboard Styling */
-        .leaderboard-list { margin-top: 15px; }
-        .leaderboard-item {
+        /* Profile Header */
+        .profile-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px dashed rgba(56, 189, 248, 0.2);
+        }
+
+        #user-photo { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--primary); background: #334155; }
+        .user-meta { display: flex; flex-direction: column; }
+        #user-name { font-weight: bold; font-size: 1rem; }
+        #user-id { font-size: 0.75rem; color: var(--primary); }
+
+        /* Buttons & Tasks */
+        .task-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #334155;
-        }
-        .rank { width: 30px; font-weight: bold; color: #94a3b8; }
-        .rank-1 { color: var(--gold); }
-        .user-info { flex: 1; margin-left: 10px; }
-        .user-bal { font-weight: bold; color: var(--primary-color); }
-
-        .btn-task {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #334155;
-            padding: 15px;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            padding: 16px;
+            border-radius: 14px;
             margin-bottom: 10px;
             cursor: pointer;
+            transition: 0.2s;
         }
 
+        .task-row:active { background: rgba(255,255,255,0.1); }
+        .badge { font-size: 0.7rem; padding: 5px 10px; border-radius: 8px; background: var(--accent); font-weight: bold; }
+
+        /* Leaderboard */
+        .lb-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .rank { width: 25px; font-weight: bold; }
+        .rank-1 { color: var(--gold); }
+        .rank-2 { color: var(--silver); }
+        .rank-3 { color: var(--bronze); }
+
+        /* Withdraw Form */
+        input {
+            width: 100%;
+            padding: 14px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            color: var(--primary);
+            margin: 10px 0;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+
+        .primary-btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .primary-btn:disabled { background: #475569; opacity: 0.6; cursor: not-allowed; }
+
+        /* History Table */
+        .history-list { margin-top: 15px; font-size: 0.85rem; }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
+        .status-pending { color: var(--gold); }
+
+        /* Navigation */
         nav {
             position: fixed;
             bottom: 0;
             width: 100%;
-            background-color: var(--container-bg);
+            background: var(--card-bg);
             display: flex;
             justify-content: space-around;
-            padding: 12px 0 25px 0;
-            border-top: 1px solid #334155;
+            padding: 15px 0 30px 0;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            z-index: 100;
         }
 
-        nav button { background: none; border: none; color: #94a3b8; font-size: 0.8rem; cursor: pointer; }
-        nav button.active-nav { color: var(--primary-color); font-weight: bold; }
-
-        .action-btn {
-            width: 100%;
-            padding: 14px;
-            border-radius: 10px;
-            background: var(--accent-color);
-            color: white;
+        nav button {
+            background: none;
             border: none;
-            font-weight: bold;
-            margin-top: 10px;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
             cursor: pointer;
         }
+
+        nav button.active-nav { color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1 style="margin:0; font-size: 1.2rem;">TON TURBO</h1>
+    <h1>TON TURBO</h1>
 </header>
 
 <main>
     <section id="home" class="page active">
-        <div class="profile-container">
-            <img id="user-photo" src="https://via.placeholder.com/50" alt="User">
-            <div style="display:flex; flex-direction:column;">
-                <span id="user-name" style="font-weight:bold;">Loading...</span>
-                <span id="user-username" style="font-size:0.8rem; color:var(--primary-color);">@user</span>
+        <div class="profile-box">
+            <img id="user-photo" src="https://via.placeholder.com/50" alt="Profile">
+            <div class="user-meta">
+                <span id="user-name">Loading...</span>
+                <span id="user-id">@username</span>
             </div>
         </div>
+
         <div class="card" style="text-align: center;">
-            <p style="margin:0; color: #94a3b8;">Total Balance</p>
-            <div class="stat-val" id="balance">0.00 $TON</div>
+            <p style="margin:0; color: var(--text-dim);">Available Balance</p>
+            <div class="stat-val" id="balance-display">0.00 $TON</div>
         </div>
+
         <div class="card">
-            <h3 style="margin:0;">Global Airdrop</h3>
-            <p style="font-size:0.9rem; color:#94a3b8;">Complete tasks and invite friends to maximize your $TON rewards.</p>
+            <h3 style="margin-top:0;">Welcome!</h3>
+            <p style="font-size: 0.9rem; line-height: 1.5; color: var(--text-dim);">
+                Start earning $TON by completing tasks and referring friends. Join the fastest growing community on TON network.
+            </p>
         </div>
     </section>
 
     <section id="task" class="page">
-        <h2>Airdrop Tasks</h2>
-        <div class="btn-task" onclick="completeTask('tg', 'https://t.me/TonTurboOfficial')">
+        <h2 style="margin-bottom:20px;">Earn $TON</h2>
+        <div class="task-row" onclick="doTask('tg', 'https://t.me/TonTurboOfficial')">
             <div>
-                <div>Join Channel</div>
-                <div style="font-size:0.7rem; color:#94a3b8;">+1 $TON</div>
+                <div style="font-weight: 600;">Join Telegram Channel</div>
+                <div style="font-size: 0.75rem; color: var(--text-dim);">Reward: 1 $TON</div>
             </div>
-            <span id="status-tg" style="font-size:0.8rem; background:var(--accent-color); padding:4px 8px; border-radius:5px;">Start</span>
+            <span id="task-tg-btn" class="badge">Start</span>
         </div>
-        <div class="btn-task" onclick="completeTask('x', 'https://x.com/tonturboxyz')">
+        <div class="task-row" onclick="doTask('x', 'https://x.com/tonturboxyz')">
             <div>
-                <div>Follow Twitter</div>
-                <div style="font-size:0.7rem; color:#94a3b8;">+1 $TON</div>
+                <div style="font-weight: 600;">Follow X (Twitter)</div>
+                <div style="font-size: 0.75rem; color: var(--text-dim);">Reward: 1 $TON</div>
             </div>
-            <span id="status-x" style="font-size:0.8rem; background:var(--accent-color); padding:4px 8px; border-radius:5px;">Start</span>
+            <span id="task-x-btn" class="badge">Start</span>
         </div>
     </section>
 
     <section id="referral" class="page">
-        <h2>Referral Program</h2>
+        <h2>Referrals</h2>
         <div class="card">
-            <p style="margin-top:0;">Invited: <b id="ref-count" style="color:var(--primary-color);">0</b> Friends</p>
-            <p style="font-size:0.85rem;">Reward: <b>0.1 $TON</b> per friend</p>
-            <input type="text" id="ref-link" value="https://t.me/TonTurboBot?start=12345" readonly 
-                   style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; border-radius: 8px; box-sizing: border-box;">
-            <button class="action-btn" onclick="copyLink()">Copy Link</button>
-            <button class="action-btn" style="background:#475569; font-size:0.7rem;" onclick="simulateReferral()">DEBUG: Simulate 1 Invite</button>
+            <p style="margin-top:0;">Earn <span style="color:var(--primary);">0.1 $TON</span> for every friend you invite!</p>
+            <input type="text" id="ref-link" value="https://t.me/TonTurboBot?start=user_id" readonly>
+            <button class="primary-btn" onclick="copyRef()">Copy Link</button>
+            <p style="text-align: center; font-size: 0.8rem; margin-top: 10px;">Invited: <span id="ref-count" style="color:var(--primary); font-weight:bold;">0</span> friends</p>
         </div>
 
-        <h3>Top Leaderboard</h3>
+        <h3 style="margin: 25px 0 10px 0;">Top Leaderboard</h3>
         <div class="card">
-            <div class="leaderboard-list">
-                <div class="leaderboard-item"><span class="rank rank-1">1</span><span class="user-info">CryptoKing</span><span class="user-bal">1,240 $TON</span></div>
-                <div class="leaderboard-item"><span class="rank">2</span><span class="user-info">TonWhale</span><span class="user-bal">980 $TON</span></div>
-                <div class="leaderboard-item"><span class="rank">3</span><span class="user-info">AirdropHunter</span><span class="user-bal">750 $TON</span></div>
-                <div class="leaderboard-item" style="border:none; opacity:0.8;"><span class="rank" id="my-rank">?</span><span class="user-info">You (Calculating...)</span><span class="user-bal" id="my-leader-bal">0 $TON</span></div>
+            <div class="lb-item"><span class="rank rank-1">1</span><span>Ton Whale</span><span style="font-weight:bold;">1000 $TON</span></div>
+            <div class="lb-item"><span class="rank rank-2">2</span><span>Crypto Master</span><span style="font-weight:bold;">500 $TON</span></div>
+            <div class="lb-item"><span class="rank rank-3">3</span><span>Early Adopter</span><span style="font-weight:bold;">250 $TON</span></div>
+            <div class="lb-item" style="border:none; background: rgba(56,189,248,0.1); margin-top: 5px; border-radius: 8px; padding: 10px;">
+                <span class="rank" style="color:var(--text-dim);">#?</span>
+                <span>You</span>
+                <span id="user-lb-bal" style="font-weight:bold;">0.00 $TON</span>
             </div>
         </div>
     </section>
 
     <section id="withdraw" class="page">
-        <h2>Withdraw</h2>
-        <div class="card" style="text-align:center;">
-            <p style="color:#94a3b8;">Min. Withdraw: 5 $TON</p>
-            <div class="stat-val" id="withdraw-balance" style="margin:10px 0;">0.00 $TON</div>
-            <button id="withdraw-btn" class="action-btn" onclick="requestWithdraw()">Withdraw Now</button>
+        <h2>Withdrawal</h2>
+        <div class="card">
+            <p style="text-align: center; color: var(--text-dim); margin-top: 0;">Min. Requirement: 5 $TON</p>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div class="stat-val" id="withdraw-balance-display">0.00 $TON</div>
+            </div>
+            
+            <label style="font-size: 0.8rem; color: var(--text-dim);">TON Wallet Address:</label>
+            <input type="text" id="wallet-addr" placeholder="UQ..." maxlength="64">
+            
+            <button id="withdraw-btn" class="primary-btn" onclick="submitWithdraw()">Submit Withdrawal</button>
+        </div>
+
+        <h3>Withdrawal History</h3>
+        <div id="history-list" class="history-list">
+            <p style="text-align:center; color: var(--text-dim); font-size: 0.8rem;">No transactions yet.</p>
         </div>
     </section>
 </main>
 
 <nav>
-    <button onclick="showPage('home')" id="nav-home" class="active-nav">Home</button>
-    <button onclick="showPage('task')" id="nav-task">Tasks</button>
-    <button onclick="showPage('referral')" id="nav-referral">Referral</button>
-    <button onclick="showPage('withdraw')" id="nav-withdraw">Withdraw</button>
+    <button onclick="nav('home')" id="nav-home" class="active-nav"><span>🏠</span>Home</button>
+    <button onclick="nav('task')" id="nav-task"><span>📋</span>Tasks</button>
+    <button onclick="nav('referral')" id="nav-referral"><span>👥</span>Invite</button>
+    <button onclick="nav('withdraw')" id="nav-withdraw"><span>💳</span>Withdraw</button>
 </nav>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
+    tg.headerColor = '#0ea5e9';
 
-    // Data Management
-    let db = JSON.parse(localStorage.getItem('tonturbo_db')) || {
+    // App State
+    let state = JSON.parse(localStorage.getItem('tonturbo_final_v1')) || {
         tasks: { tg: false, x: false },
-        referrals: 0
+        referrals: 0,
+        history: [],
+        address: ""
     };
 
     function init() {
+        // Load Telegram User
         const user = tg.initDataUnsafe.user;
         if(user) {
-            document.getElementById('user-name').innerText = user.first_name;
-            document.getElementById('user-username').innerText = user.username ? '@' + user.username : '';
+            document.getElementById('user-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+            document.getElementById('user-id').innerText = user.username ? '@' + user.username : 'User ID: ' + user.id;
             if(user.photo_url) document.getElementById('user-photo').src = user.photo_url;
+            document.getElementById('ref-link').value = "https://t.me/TonTurboBot?start=" + user.id;
         }
-        updateUI();
+
+        // Load saved address
+        if(state.address) document.getElementById('wallet-addr').value = state.address;
+
+        refreshUI();
     }
 
-    function updateUI() {
-        let bal = 0;
-        if(db.tasks.tg) bal += 1;
-        if(db.tasks.x) bal += 1;
-        bal += (db.referrals * 0.1);
+    function calculateTotal() {
+        let earned = 0;
+        if(state.tasks.tg) earned += 1;
+        if(state.tasks.x) earned += 1;
+        earned += (state.referrals * 0.1);
         
-        const finalBal = bal.toFixed(2);
-        document.getElementById('balance').innerText = finalBal + " $TON";
-        document.getElementById('withdraw-balance').innerText = finalBal + " $TON";
-        document.getElementById('ref-count').innerText = db.referrals;
-        document.getElementById('my-leader-bal').innerText = finalBal + " $TON";
+        // Subtract already withdrawn amounts
+        let withdrawn = state.history.reduce((sum, item) => sum + item.amount, 0);
+        
+        return parseFloat((earned - withdrawn).toFixed(2));
+    }
 
-        // Task Status
-        if(db.tasks.tg) document.getElementById('status-tg').innerText = "✅ Done";
-        if(db.tasks.x) document.getElementById('status-x').innerText = "✅ Done";
+    function refreshUI() {
+        const bal = calculateTotal();
+        document.getElementById('balance-display').innerText = bal.toFixed(2) + " $TON";
+        document.getElementById('withdraw-balance-display').innerText = bal.toFixed(2) + " $TON";
+        document.getElementById('user-lb-bal').innerText = bal.toFixed(2) + " $TON";
+        document.getElementById('ref-count').innerText = state.referrals;
+
+        // Task Buttons
+        if(state.tasks.tg) {
+            const b = document.getElementById('task-tg-btn');
+            b.innerText = "Completed ✅";
+            b.style.background = "var(--success)";
+        }
+        if(state.tasks.x) {
+            const b = document.getElementById('task-x-btn');
+            b.innerText = "Completed ✅";
+            b.style.background = "var(--success)";
+        }
 
         // Withdraw Button
         const wBtn = document.getElementById('withdraw-btn');
         if(bal < 5) {
-            wBtn.innerText = "Need " + (5 - bal).toFixed(2) + " More $TON";
-            wBtn.style.opacity = "0.5";
+            wBtn.disabled = true;
+            wBtn.innerText = "Minimum 5 $TON required";
         } else {
-            wBtn.innerText = "Withdraw Now";
-            wBtn.style.opacity = "1";
+            wBtn.disabled = false;
+            wBtn.innerText = "Submit Withdrawal";
         }
-        localStorage.setItem('tonturbo_db', JSON.stringify(db));
+
+        renderHistory();
+        localStorage.setItem('tonturbo_final_v1', JSON.stringify(state));
     }
 
-    function showPage(p) {
-        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('nav button').forEach(el => el.classList.remove('active-nav'));
-        document.getElementById(p).classList.add('active');
-        document.getElementById('nav-'+p).classList.add('active-nav');
+    function nav(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-nav'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('nav-'+id).classList.add('active-nav');
         tg.HapticFeedback.impactOccurred('light');
     }
 
-    function completeTask(type, url) {
-        if(db.tasks[type]) return tg.showAlert("Task already finished!");
+    function doTask(type, url) {
+        if(state.tasks[type]) return tg.showAlert("Task already finished.");
         window.open(url, '_blank');
         setTimeout(() => {
-            db.tasks[type] = true;
-            updateUI();
-            tg.HapticFeedback.notificationOccurred('success');
+            tg.showConfirm("Did you follow the account?", (confirmed) => {
+                if(confirmed) {
+                    state.tasks[type] = true;
+                    refreshUI();
+                    tg.HapticFeedback.notificationOccurred('success');
+                }
+            });
         }, 2000);
     }
 
-    function simulateReferral() {
-        db.referrals++;
-        updateUI();
-        tg.HapticFeedback.impactOccurred('medium');
-    }
-
-    function copyLink() {
-        const el = document.getElementById('ref-link');
-        el.select();
-        navigator.clipboard.writeText(el.value);
+    function copyRef() {
+        const i = document.getElementById('ref-link');
+        i.select();
+        navigator.clipboard.writeText(i.value);
         tg.showAlert("Referral link copied!");
     }
 
-    function requestWithdraw() {
-        let bal = parseFloat(document.getElementById('withdraw-balance').innerText);
-        if(bal < 5) return tg.showAlert("Insufficient balance!");
-        tg.showPopup({
-            title: 'Withdraw',
-            message: 'Send your ' + bal + ' $TON to your wallet?',
-            buttons: [{text: 'Yes', type: 'ok'}, {text: 'Cancel', type: 'destructive'}]
+    function submitWithdraw() {
+        const addr = document.getElementById('wallet-addr').value.trim();
+        const bal = calculateTotal();
+
+        if(addr.length < 20) return tg.showAlert("Please enter a valid TON address.");
+        
+        state.address = addr;
+        state.history.unshift({
+            amount: bal,
+            address: addr,
+            status: 'Pending',
+            date: new Date().toLocaleDateString()
         });
+
+        tg.showAlert("Withdrawal of " + bal + " $TON has been submitted!");
+        refreshUI();
+        tg.HapticFeedback.notificationOccurred('success');
+    }
+
+    function renderHistory() {
+        const container = document.getElementById('history-list');
+        if(state.history.length === 0) return;
+
+        container.innerHTML = state.history.map(item => `
+            <div class="history-item">
+                <div>
+                    <div style="font-weight:bold;">${item.amount} $TON</div>
+                    <div style="font-size:0.6rem; color:var(--text-dim);">${item.address.substring(0,8)}...${item.address.slice(-8)}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="status-pending">${item.status}</div>
+                    <div style="font-size:0.6rem; color:var(--text-dim);">${item.date}</div>
+                </div>
+            </div>
+        `).join('');
     }
 
     init();
 </script>
+
 </body>
 </html>
