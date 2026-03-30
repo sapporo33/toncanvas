@@ -13,11 +13,11 @@
             --text-color: #f8fafc;
             --accent-color: #0ea5e9;
             --success-color: #22c55e;
-            --danger-color: #ef4444;
+            --gold: #fbbf24;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
@@ -29,60 +29,53 @@
         }
 
         header {
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             background: linear-gradient(135deg, var(--accent-color), var(--bg-color));
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
         .profile-container {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             background: rgba(255, 255, 255, 0.05);
-            padding: 15px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            border: 1px dashed rgba(56, 189, 248, 0.3);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
         }
 
-        #user-photo {
-            width: 55px;
-            height: 55px;
-            border-radius: 50%;
-            border: 2px solid var(--primary-color);
-            background-color: #334155;
-            object-fit: cover;
-        }
+        #user-photo { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--primary-color); }
 
-        .user-details { display: flex; flex-direction: column; }
-        #user-name { font-weight: bold; font-size: 1.1rem; }
-        #user-username { color: var(--primary-color); font-size: 0.85rem; }
-
-        main {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            padding-bottom: 90px;
-        }
-
-        .page { display: none; animation: fadeIn 0.2s ease; }
+        main { flex: 1; padding: 15px; overflow-y: auto; padding-bottom: 90px; }
+        .page { display: none; animation: fadeIn 0.2s ease-in-out; }
         .active { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         .card {
             background-color: var(--container-bg);
-            padding: 20px;
-            border-radius: 15px;
+            padding: 18px;
+            border-radius: 16px;
             margin-bottom: 15px;
             border: 1px solid #334155;
         }
 
-        .stat-val { font-size: 1.8rem; font-weight: bold; color: var(--primary-color); margin-top: 5px; }
+        .stat-val { font-size: 1.8rem; font-weight: bold; color: var(--primary-color); }
+
+        /* Leaderboard Styling */
+        .leaderboard-list { margin-top: 15px; }
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #334155;
+        }
+        .rank { width: 30px; font-weight: bold; color: #94a3b8; }
+        .rank-1 { color: var(--gold); }
+        .user-info { flex: 1; margin-left: 10px; }
+        .user-bal { font-weight: bold; color: var(--primary-color); }
 
         .btn-task {
             display: flex;
@@ -91,18 +84,8 @@
             background: #334155;
             padding: 15px;
             border-radius: 12px;
-            margin-bottom: 12px;
-            text-decoration: none;
-            color: white;
+            margin-bottom: 10px;
             cursor: pointer;
-        }
-
-        .status-badge {
-            font-size: 0.75rem;
-            padding: 5px 10px;
-            border-radius: 6px;
-            background: var(--accent-color);
-            font-weight: bold;
         }
 
         nav {
@@ -114,63 +97,46 @@
             justify-content: space-around;
             padding: 12px 0 25px 0;
             border-top: 1px solid #334155;
-            z-index: 100;
         }
 
-        nav button {
-            background: none;
-            border: none;
-            color: #94a3b8;
-            font-size: 0.85rem;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-
+        nav button { background: none; border: none; color: #94a3b8; font-size: 0.8rem; cursor: pointer; }
         nav button.active-nav { color: var(--primary-color); font-weight: bold; }
 
         .action-btn {
             width: 100%;
-            padding: 15px;
-            border-radius: 12px;
+            padding: 14px;
+            border-radius: 10px;
             background: var(--accent-color);
             color: white;
             border: none;
             font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
             margin-top: 10px;
+            cursor: pointer;
         }
-
-        .action-btn:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1 style="margin:0; font-size: 1.4rem;">TON TURBO</h1>
+    <h1 style="margin:0; font-size: 1.2rem;">TON TURBO</h1>
 </header>
 
 <main>
     <section id="home" class="page active">
         <div class="profile-container">
-            <img id="user-photo" src="https://via.placeholder.com/60" alt="Avatar">
-            <div class="user-details">
-                <span id="user-name">Loading...</span>
-                <span id="user-username">@username</span>
+            <img id="user-photo" src="https://via.placeholder.com/50" alt="User">
+            <div style="display:flex; flex-direction:column;">
+                <span id="user-name" style="font-weight:bold;">Loading...</span>
+                <span id="user-username" style="font-size:0.8rem; color:var(--primary-color);">@user</span>
             </div>
         </div>
-
         <div class="card" style="text-align: center;">
-            <p style="margin:0; color: #94a3b8;">Current Balance</p>
-            <div class="stat-val" id="balance">0 $TON</div>
+            <p style="margin:0; color: #94a3b8;">Total Balance</p>
+            <div class="stat-val" id="balance">0.00 $TON</div>
         </div>
-        
         <div class="card">
-            <h3>Welcome!</h3>
-            <p style="font-size: 0.9rem; color: #cbd5e1;">Earn $TON by completing tasks and inviting friends.</p>
+            <h3 style="margin:0;">Global Airdrop</h3>
+            <p style="font-size:0.9rem; color:#94a3b8;">Complete tasks and invite friends to maximize your $TON rewards.</p>
         </div>
     </section>
 
@@ -178,39 +144,48 @@
         <h2>Airdrop Tasks</h2>
         <div class="btn-task" onclick="completeTask('tg', 'https://t.me/TonTurboOfficial')">
             <div>
-                <div>Join Telegram Channel</div>
-                <div style="font-size: 0.7rem; color: #94a3b8;">+1 $TON</div>
+                <div>Join Channel</div>
+                <div style="font-size:0.7rem; color:#94a3b8;">+1 $TON</div>
             </div>
-            <span id="status-tg" class="status-badge">Start</span>
+            <span id="status-tg" style="font-size:0.8rem; background:var(--accent-color); padding:4px 8px; border-radius:5px;">Start</span>
         </div>
         <div class="btn-task" onclick="completeTask('x', 'https://x.com/tonturboxyz')">
             <div>
-                <div>Follow X (Twitter)</div>
-                <div style="font-size: 0.7rem; color: #94a3b8;">+1 $TON</div>
+                <div>Follow Twitter</div>
+                <div style="font-size:0.7rem; color:#94a3b8;">+1 $TON</div>
             </div>
-            <span id="status-x" class="status-badge">Start</span>
+            <span id="status-x" style="font-size:0.8rem; background:var(--accent-color); padding:4px 8px; border-radius:5px;">Start</span>
         </div>
     </section>
 
     <section id="referral" class="page">
-        <h2>Referral</h2>
+        <h2>Referral Program</h2>
         <div class="card">
-            <p>Earn <span style="color:var(--primary-color);">0.1 $TON</span> per friend.</p>
+            <p style="margin-top:0;">Invited: <b id="ref-count" style="color:var(--primary-color);">0</b> Friends</p>
+            <p style="font-size:0.85rem;">Reward: <b>0.1 $TON</b> per friend</p>
             <input type="text" id="ref-link" value="https://t.me/TonTurboBot?start=12345" readonly 
-                   style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; border-radius: 8px; box-sizing: border-box;">
-            <button class="action-btn" onclick="copyReferral()">Copy Link</button>
+                   style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; border-radius: 8px; box-sizing: border-box;">
+            <button class="action-btn" onclick="copyLink()">Copy Link</button>
+            <button class="action-btn" style="background:#475569; font-size:0.7rem;" onclick="simulateReferral()">DEBUG: Simulate 1 Invite</button>
+        </div>
+
+        <h3>Top Leaderboard</h3>
+        <div class="card">
+            <div class="leaderboard-list">
+                <div class="leaderboard-item"><span class="rank rank-1">1</span><span class="user-info">CryptoKing</span><span class="user-bal">1,240 $TON</span></div>
+                <div class="leaderboard-item"><span class="rank">2</span><span class="user-info">TonWhale</span><span class="user-bal">980 $TON</span></div>
+                <div class="leaderboard-item"><span class="rank">3</span><span class="user-info">AirdropHunter</span><span class="user-bal">750 $TON</span></div>
+                <div class="leaderboard-item" style="border:none; opacity:0.8;"><span class="rank" id="my-rank">?</span><span class="user-info">You (Calculating...)</span><span class="user-bal" id="my-leader-bal">0 $TON</span></div>
+            </div>
         </div>
     </section>
 
     <section id="withdraw" class="page">
         <h2>Withdraw</h2>
-        <div class="card">
-            <p style="text-align: center; color: #94a3b8;">Minimum withdrawal: 5 $TON</p>
-            <div style="text-align: center; margin: 20px 0;">
-                <span style="font-size: 0.9rem;">Your Balance:</span>
-                <div class="stat-val" id="withdraw-balance">0 $TON</div>
-            </div>
-            <button id="withdraw-btn" class="action-btn" onclick="processWithdraw()">Withdraw Now</button>
+        <div class="card" style="text-align:center;">
+            <p style="color:#94a3b8;">Min. Withdraw: 5 $TON</p>
+            <div class="stat-val" id="withdraw-balance" style="margin:10px 0;">0.00 $TON</div>
+            <button id="withdraw-btn" class="action-btn" onclick="requestWithdraw()">Withdraw Now</button>
         </div>
     </section>
 </main>
@@ -226,100 +201,89 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // Data stored in LocalStorage for demo purposes
-    let userData = JSON.parse(localStorage.getItem('tonturbo_data')) || {
+    // Data Management
+    let db = JSON.parse(localStorage.getItem('tonturbo_db')) || {
         tasks: { tg: false, x: false },
-        referrals: 0 // Change this to 30 to test the 5 $TON limit
+        referrals: 0
     };
 
     function init() {
-        loadUserData();
+        const user = tg.initDataUnsafe.user;
+        if(user) {
+            document.getElementById('user-name').innerText = user.first_name;
+            document.getElementById('user-username').innerText = user.username ? '@' + user.username : '';
+            if(user.photo_url) document.getElementById('user-photo').src = user.photo_url;
+        }
         updateUI();
     }
 
-    function loadUserData() {
-        const user = tg.initDataUnsafe.user;
-        if (user) {
-            document.getElementById('user-name').innerText = user.first_name;
-            document.getElementById('user-username').innerText = user.username ? '@' + user.username : 'User';
-            if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
-        }
-    }
-
-    function calculateBalance() {
-        let bal = 0;
-        if(userData.tasks.tg) bal += 1;
-        if(userData.tasks.x) bal += 1;
-        bal += (userData.referrals * 0.1);
-        return parseFloat(bal.toFixed(2));
-    }
-
     function updateUI() {
-        const balance = calculateBalance();
-        document.getElementById('balance').innerText = balance + " $TON";
-        document.getElementById('withdraw-balance').innerText = balance + " $TON";
+        let bal = 0;
+        if(db.tasks.tg) bal += 1;
+        if(db.tasks.x) bal += 1;
+        bal += (db.referrals * 0.1);
         
-        // Task UI
-        if(userData.tasks.tg) {
-            document.getElementById('status-tg').innerText = "Done ✅";
-            document.getElementById('status-tg').style.background = "var(--success-color)";
-        }
-        if(userData.tasks.x) {
-            document.getElementById('status-x').innerText = "Done ✅";
-            document.getElementById('status-x').style.background = "var(--success-color)";
-        }
+        const finalBal = bal.toFixed(2);
+        document.getElementById('balance').innerText = finalBal + " $TON";
+        document.getElementById('withdraw-balance').innerText = finalBal + " $TON";
+        document.getElementById('ref-count').innerText = db.referrals;
+        document.getElementById('my-leader-bal').innerText = finalBal + " $TON";
 
-        // Withdraw Button Logic
-        const btn = document.getElementById('withdraw-btn');
-        if (balance < 5) {
-            btn.innerText = "Need 5 $TON to Withdraw";
-            btn.style.opacity = "0.6";
+        // Task Status
+        if(db.tasks.tg) document.getElementById('status-tg').innerText = "✅ Done";
+        if(db.tasks.x) document.getElementById('status-x').innerText = "✅ Done";
+
+        // Withdraw Button
+        const wBtn = document.getElementById('withdraw-btn');
+        if(bal < 5) {
+            wBtn.innerText = "Need " + (5 - bal).toFixed(2) + " More $TON";
+            wBtn.style.opacity = "0.5";
         } else {
-            btn.innerText = "Withdraw Now";
-            btn.style.opacity = "1";
+            wBtn.innerText = "Withdraw Now";
+            wBtn.style.opacity = "1";
         }
+        localStorage.setItem('tonturbo_db', JSON.stringify(db));
     }
 
-    function showPage(pageId) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-nav'));
-        document.getElementById(pageId).classList.add('active');
-        document.getElementById('nav-' + pageId).classList.add('active-nav');
+    function showPage(p) {
+        document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(el => el.classList.remove('active-nav'));
+        document.getElementById(p).classList.add('active');
+        document.getElementById('nav-'+p).classList.add('active-nav');
+        tg.HapticFeedback.impactOccurred('light');
     }
 
     function completeTask(type, url) {
-        if (userData.tasks[type]) return tg.showAlert("Completed!");
+        if(db.tasks[type]) return tg.showAlert("Task already finished!");
         window.open(url, '_blank');
         setTimeout(() => {
-            userData.tasks[type] = true;
-            saveData();
+            db.tasks[type] = true;
             updateUI();
             tg.HapticFeedback.notificationOccurred('success');
         }, 2000);
     }
 
-    function processWithdraw() {
-        const bal = calculateBalance();
-        if (bal < 5) {
-            tg.showAlert(`You need ${ (5 - bal).toFixed(1) } more $TON to withdraw.`);
-        } else {
-            tg.showPopup({
-                title: 'Withdrawal Request',
-                message: 'Enter your TON wallet address to receive your ' + bal + ' $TON.',
-                buttons: [{text: 'Done', type: 'ok'}]
-            });
-        }
+    function simulateReferral() {
+        db.referrals++;
+        updateUI();
+        tg.HapticFeedback.impactOccurred('medium');
     }
 
-    function copyReferral() {
-        const copyText = document.getElementById("ref-link");
-        copyText.select();
-        navigator.clipboard.writeText(copyText.value);
-        tg.showAlert("Link copied!");
+    function copyLink() {
+        const el = document.getElementById('ref-link');
+        el.select();
+        navigator.clipboard.writeText(el.value);
+        tg.showAlert("Referral link copied!");
     }
 
-    function saveData() {
-        localStorage.setItem('tonturbo_data', JSON.stringify(userData));
+    function requestWithdraw() {
+        let bal = parseFloat(document.getElementById('withdraw-balance').innerText);
+        if(bal < 5) return tg.showAlert("Insufficient balance!");
+        tg.showPopup({
+            title: 'Withdraw',
+            message: 'Send your ' + bal + ' $TON to your wallet?',
+            buttons: [{text: 'Yes', type: 'ok'}, {text: 'Cancel', type: 'destructive'}]
+        });
     }
 
     init();
