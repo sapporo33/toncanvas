@@ -2,10 +2,9 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Telegram Mini App</title>
 
-  <!-- Telegram WebApp JS -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -13,9 +12,8 @@
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       background: #f3f4f6;
-      color: #111;
     }
 
     .container { padding: 16px; padding-bottom: 80px; }
@@ -24,7 +22,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
     }
 
     .profile {
@@ -44,18 +41,7 @@
       color: white;
       padding: 20px;
       border-radius: 20px;
-      margin-bottom: 20px;
-    }
-
-    .balance-card h2 { margin: 0; font-size: 16px; opacity: 0.7; }
-    .balance-card h1 { margin: 10px 0; font-size: 32px; }
-
-    .section-title {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 20px 0 10px;
-      font-weight: bold;
+      margin: 20px 0;
     }
 
     .card {
@@ -90,7 +76,6 @@
       border: none;
       padding: 8px 16px;
       border-radius: 10px;
-      cursor: pointer;
     }
 
     .nav {
@@ -104,28 +89,22 @@
       border-top: 1px solid #ddd;
     }
 
-    .nav button {
-      background: none;
-      border: none;
-      font-size: 12px;
-    }
-
     .page { display: none; }
     .active { display: block; }
   </style>
 </head>
+
 <body>
 
 <div class="container">
 
-  <!-- HOME -->
   <div id="home" class="page active">
 
     <div class="header">
       <div class="profile">
         <img id="avatar" src="https://via.placeholder.com/40">
         <div>
-          <div>Welcome back,</div>
+          <div>Welcome back</div>
           <b id="username">User</b>
         </div>
       </div>
@@ -135,75 +114,60 @@
     <div class="balance-card">
       <h2>Total Balance (TON)</h2>
       <h1 id="balance">0.00 TON</h1>
-      <small>Ready to withdraw anytime</small>
     </div>
 
-    <div class="section-title">
-      <span>Pending Tasks</span>
-      <small>View All</small>
-    </div>
+    <h3>Pending Tasks</h3>
 
-    <!-- Telegram Task -->
+    <!-- Telegram -->
     <div class="card">
       <div class="task-left">
         <div class="icon">📩</div>
         <div>
           <div>Ton Turbo Official</div>
-          <small>Telegram Channel</small>
+          <small>Telegram Channel (+0.25 TON)</small>
         </div>
       </div>
-      <button class="btn" onclick="startTask(0.5)">Start</button>
+      <button class="btn" onclick="startTask('https://t.me/TonTurboOfficial', 0.25)">Start</button>
     </div>
 
-    <!-- Twitter Task -->
+    <!-- Twitter -->
     <div class="card">
       <div class="task-left">
         <div class="icon">🐦</div>
         <div>
           <div>Ton Turbo Official</div>
-          <small>Twitter Follow</small>
+          <small>Twitter Follow (+0.25 TON)</small>
         </div>
       </div>
-      <button class="btn" onclick="startTask(0.5)">Start</button>
+      <button class="btn" onclick="startTask('https://x.com/tonturboxyz', 0.25)">Start</button>
     </div>
+
+    <!-- Invite -->
+    <div class="card">
+      <div class="task-left">
+        <div class="icon">👥</div>
         <div>
           <div>Invite Friend</div>
-          <small>+0.1 TON</small>
+          <small>+0.10 TON</small>
         </div>
       </div>
-      <button class="btn" onclick="startTask(1)">Start</button>
+      <button class="btn" onclick="inviteTask()">Start</button>
     </div>
 
   </div>
 
-  <!-- TASK CENTER -->
-  <div id="task" class="page">
-    <h2>Task Center</h2>
-    <p>Semua task ada di sini</p>
-  </div>
+  <div id="task" class="page"><h2>Task Center</h2></div>
+  <div id="leaderboard" class="page"><h2>Leaderboard</h2></div>
+  <div id="referral" class="page"><h2>Referral</h2></div>
 
-  <!-- LEADERBOARD -->
-  <div id="leaderboard" class="page">
-    <h2>Leaderboard</h2>
-    <p>#1 User A - 100 TON</p>
-  </div>
-
-  <!-- REFERRAL -->
-  <div id="referral" class="page">
-    <h2>Referral</h2>
-    <p>Kode: ABC123</p>
-  </div>
-
-  <!-- WITHDRAW -->
   <div id="withdraw" class="page">
     <h2>Withdraw</h2>
-    <input id="wd" placeholder="Jumlah" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ccc;">
-    <button class="btn" style="width:100%; margin-top:10px;" onclick="withdraw()">Withdraw</button>
+    <input id="wd" placeholder="Jumlah">
+    <button class="btn" onclick="withdraw()">Withdraw</button>
   </div>
 
 </div>
 
-<!-- NAV -->
 <div class="nav">
   <button onclick="showPage('home')">Home</button>
   <button onclick="showPage('task')">Task</button>
@@ -213,43 +177,68 @@
 </div>
 
 <script>
-  let balance = 0;
+let balance = 0;
 
-  function showPage(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-  }
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
 
-  function startTask(amount) {
-    alert('Task completed! +' + amount + ' TON');
+function updateBalance() {
+  document.getElementById('balance').innerText = balance.toFixed(2) + ' TON';
+}
+
+// TASK (OPEN LINK)
+function startTask(url, amount) {
+  window.open(url, '_blank');
+
+  setTimeout(() => {
     balance += amount;
     updateBalance();
-  }
+    alert('Reward +' + amount + ' TON');
+  }, 1500);
+}
 
-  function updateBalance() {
-    document.getElementById('balance').innerText = balance.toFixed(2) + ' TON';
-  }
+// INVITE
+function inviteTask() {
+  const link = "https://t.me/your_bot?start=ref123";
 
-  function withdraw() {
-    let val = parseFloat(document.getElementById('wd').value);
-    if(val > balance) return alert('Saldo tidak cukup');
-    balance -= val;
-    updateBalance();
-    alert('Withdraw berhasil');
-  }
+  navigator.clipboard.writeText(link);
+  alert("Link referral disalin!");
 
-  // Telegram Integration
-  if(window.Telegram && window.Telegram.WebApp) {
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+  balance += 0.1;
+  updateBalance();
+}
 
-    const user = tg.initDataUnsafe?.user;
+// WITHDRAW
+function withdraw() {
+  let val = parseFloat(document.getElementById('wd').value);
 
-    if(user) {
-      document.getElementById('username').innerText = '@' + (user.username || user.first_name);
-      if(user.photo_url) document.getElementById('avatar').src = user.photo_url;
+  if (isNaN(val)) return alert('Masukkan angka');
+  if (val <= 0) return alert('Harus lebih dari 0');
+  if (val > balance) return alert('Saldo tidak cukup');
+
+  balance -= val;
+  updateBalance();
+  alert('Withdraw berhasil');
+}
+
+// TELEGRAM
+if (window.Telegram?.WebApp) {
+  const tg = window.Telegram.WebApp;
+  tg.expand();
+
+  const user = tg.initDataUnsafe?.user;
+
+  if (user) {
+    document.getElementById('username').innerText =
+      '@' + (user.username || user.first_name);
+
+    if (user.photo_url) {
+      document.getElementById('avatar').src = user.photo_url;
     }
   }
+}
 </script>
 
 </body>
