@@ -1,109 +1,132 @@
-<!doctype html>
-<html lang="id">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Miniapp TON</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>TonTurbo Airdrop MiniApp</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6f9;
+      color: #333;
+    }
+    header {
+      background: #2c3e50;
+      color: #fff;
+      padding: 15px;
+      text-align: center;
+    }
+    nav {
+      display: flex;
+      justify-content: space-around;
+      background: #34495e;
+    }
+    nav button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: #34495e;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    nav button.active {
+      background: #1abc9c;
+    }
+    section {
+      padding: 20px;
+      display: none;
+    }
+    section.active {
+      display: block;
+    }
+    .task {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .task a {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #1abc9c;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    .referral-box, .withdraw-box {
+      background: #fff;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 15px;
+      background: #1abc9c;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <header class="header">
-      <div class="profile">
-        <img id="avatar" src="https://via.placeholder.com/48" alt="avatar">
-        <div class="meta">
-          <div class="small">Welcome back</div>
-          <div id="username" class="name">User</div>
-        </div>
-      </div>
-      <div class="notif">🔔</div>
-    </header>
-
-    <section class="balance-card">
-      <div class="left">
-        <h2>Total Balance</h2>
-        <div id="balance" class="amount">0.00 TON</div>
-        <div class="kicker">Ready to withdraw anytime</div>
-      </div>
-      <div class="actions">
-        <button class="small-btn" type="button" onclick="showPage('withdraw')">Withdraw</button>
-      </div>
-    </section>
-
-    <div class="section-title">
-      <h3>Pending Tasks</h3>
-      <div class="muted">Complete to earn</div>
-    </div>
-
-    <div class="tasks">
-      <!-- Telegram task (keamanan: keep id tgBtn for legacy app.js) -->
-      <article class="card">
-        <div class="task-left">
-          <div class="icon">📩</div>
-          <div class="task-meta">
-            <div class="title">Ton Turbo Official</div>
-            <div class="desc">Telegram Channel +0.25 TON</div>
-          </div>
-        </div>
-        <button id="tgBtn" class="btn" type="button"
-          data-start-text="Start" data-claim-text="Claim" data-done-text="Done"
-          onclick="startTask('https://t.me/TonTurboOfficial', 0.25)">
-          Start
-        </button>
-      </article>
-
-      <!-- Twitter task (calls new signature but app.js supports legacy) -->
-      <article class="card">
-        <div class="task-left">
-          <div class="icon">🐦</div>
-          <div class="task-meta">
-            <div class="title">Ton Turbo Official</div>
-            <div class="desc">Twitter Follow +0.25 TON</div>
-          </div>
-        </div>
-        <button id="btn-twitter" class="btn" type="button"
-          data-start-text="Start" data-claim-text="Claim" data-done-text="Done"
-          onclick="startTask('twitter_follow','https://x.com/tonturboxyz',0.25)">
-          Start
-        </button>
-      </article>
-
-      <!-- Invite task -->
-      <article class="card">
-        <div class="task-left">
-          <div class="icon">👥</div>
-          <div class="task-meta">
-            <div class="title">Invite Friend</div>
-            <div class="desc">+0.10 TON</div>
-          </div>
-        </div>
-        <button id="btn-invite" class="btn" type="button"
-          data-start-text="Start" data-done-text="Done"
-          onclick="startTask('invite','',0.1)">
-          Start
-        </button>
-      </article>
-    </div>
-
-    <div id="withdraw" class="page">
-      <h2>Withdraw</h2>
-      <div class="input-row">
-        <input id="wd" type="number" placeholder="Jumlah">
-        <button class="btn" type="button" onclick="withdraw()">Withdraw</button>
-      </div>
-    </div>
-  </div>
-
-  <nav class="nav">
-    <button type="button" onclick="showPage('home')">Home</button>
-    <button type="button" onclick="showPage('task')">Task</button>
-    <button type="button" onclick="showPage('leaderboard')">Rank</button>
-    <button type="button" onclick="showPage('referral')">Ref</button>
-    <button type="button" onclick="showPage('withdraw')">WD</button>
+  <header>
+    <h1>TonTurbo Airdrop</h1>
+  </header>
+  <nav>
+    <button class="active" onclick="showPage('home')">Home</button>
+    <button onclick="showPage('task')">Task</button>
+    <button onclick="showPage('referral')">Referral</button>
+    <button onclick="showPage('withdraw')">Withdraw</button>
   </nav>
 
-  <!-- Script order: app.js first, then ui-sync.js -->
-  <script src="app.js"></script>
-  <script src="ui-sync.js"></script>
+  <section id="home" class="active">
+    <h2>Welcome to TonTurbo Airdrop</h2>
+    <p>Complete tasks, invite friends, and withdraw rewards directly from this miniapp.</p>
+  </section>
+
+  <section id="task">
+    <h2>Tasks</h2>
+    <div class="task">
+      <h3>Follow Telegram Channel</h3>
+      <p>Join our official Telegram channel to complete this task.</p>
+      <a href="https://t.me/TonTurboOfficial" target="_blank">Follow Telegram</a>
+    </div>
+    <div class="task">
+      <h3>Follow Twitter</h3>
+      <p>Follow our official Twitter account to complete this task.</p>
+      <a href="https://x.com/tonturboxyz" target="_blank">Follow Twitter</a>
+    </div>
+  </section>
+
+  <section id="referral">
+    <h2>Referral</h2>
+    <div class="referral-box">
+      <p>Your referral link:</p>
+      <input type="text" value="https://t.me/TonTurboBot?start=YOURID" readonly style="width:100%;padding:8px;">
+      <a class="btn" href="#">Copy Link</a>
+    </div>
+  </section>
+
+  <section id="withdraw">
+    <h2>Withdraw</h2>
+    <div class="withdraw-box">
+      <p>Balance: <strong>100 TON</strong></p>
+      <a class="btn" href="#">Withdraw Now</a>
+    </div>
+  </section>
+
+  <script>
+    function showPage(pageId) {
+      document.querySelectorAll("section").forEach(sec => sec.classList.remove("active"));
+      document.getElementById(pageId).classList.add("active");
+      document.querySelectorAll("nav button").forEach(btn => btn.classList.remove("active"));
+      document.querySelector(`nav button[onclick="showPage('${pageId}')"]`).classList.add("active");
+    }
+  </script>
 </body>
 </html>
