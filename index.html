@@ -1,304 +1,256 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>TonCanvas Portrait Ads — Buy Tiles</title>
-<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-<style>
-  :root{
-    --bg:#0b1220; --grid:#1e293b; --line:rgba(255,255,255,0.06);
-    --hover:rgba(59,130,246,0.28); --select:rgba(34,197,94,0.45);
-    --accent:#0ea5e9; --muted:#9ca3af; --owned:rgba(0,0,0,0.45);
-  }
-  html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Roboto,Arial;}
-  #app{display:flex;flex-direction:column;height:100vh;padding:12px;box-sizing:border-box;gap:10px;}
-  header{display:flex;justify-content:space-between;align-items:center;}
-  .title{font-weight:600;font-size:16px;}
-  .sub{font-size:12px;color:var(--muted);}
-  #canvasWrap{flex:1 1 auto;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:12px;padding:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);}
-  canvas{background:var(--grid);border-radius:8px;touch-action:none;display:block;width:100%;height:100%;max-width:420px;max-height:calc(100vh - 140px);}
-  footer{display:flex;justify-content:space-between;align-items:center;gap:8px;}
-  .btn{background:var(--accent);color:#fff;border:none;padding:10px 12px;border-radius:10px;font-weight:600;cursor:pointer;}
-  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);}
-  .info{font-size:12px;color:var(--muted);text-align:right;}
-  #panel {
-    position: fixed; left: 50%; transform: translateX(-50%);
-    bottom: 18px; width: 92%; max-width: 420px; background:#0f172a; border-radius:12px; padding:12px;
-    border:1px solid rgba(14,165,233,0.12); display:none; z-index:1000;
-  }
-  #panel input, #panel button { width:100%; box-sizing:border-box; margin-top:8px; padding:10px; border-radius:8px; border:1px solid #334155; background:#0b1220; color:#fff; }
-  #panel .row { display:flex; gap:8px; }
-  #panel .row > * { flex:1; }
-  .price { font-weight:700; color:#22c55e; }
-  button:focus{outline:2px solid rgba(14,165,233,0.6); outline-offset:2px;}
-  #connectBtn { background:#0ea5e9; border:none; color:#fff; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight: 600; }
-  /* debug panel */
-  #tc-debug { position:fixed; left:12px; top:12px; z-index:9999; background:#071029; color:#fff; padding:8px; border-radius:8px; font-size:12px; border:1px solid rgba(255,255,255,0.06); width:320px; display:none; }
-  #tc-log { margin-top:8px; max-height:150px; overflow:auto; white-space:pre-wrap; font-family:monospace; font-size:11px; color:#d1e8ff; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telegram Mini App</title>
+
+  <!-- Telegram WebApp JS -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      color: #111;
+    }
+
+    .container { padding: 16px; padding-bottom: 80px; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .profile img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+
+    .balance-card {
+      background: linear-gradient(135deg, #000, #111);
+      color: white;
+      padding: 20px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+
+    .balance-card h2 { margin: 0; font-size: 16px; opacity: 0.7; }
+    .balance-card h1 { margin: 10px 0; font-size: 32px; }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0 10px;
+      font-weight: bold;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .task-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon {
+      width: 40px;
+      height: 40px;
+      background: #dbeafe;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn {
+      background: black;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      border-top: 1px solid #ddd;
+    }
+
+    .nav button {
+      background: none;
+      border: none;
+      font-size: 12px;
+    }
+
+    .page { display: none; }
+    .active { display: block; }
+  </style>
 </head>
 <body>
-<div id="app" role="application" aria-label="TonCanvas portrait">
-  <header>
-    <div>
-      <div class="title">TonCanvas Ads</div>
-      <div class="sub">Tap untuk pilih • Harga: <span class="price">0.5 TON</span></div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <div class="sub" id="posLabel">Pos: —</div>
-      <button id="connectBtn">Connect Wallet</button>
-    </div>
-  </header>
 
-  <div id="canvasWrap">
-    <canvas id="portraitCanvas" aria-label="Grid canvas"></canvas>
+<div class="container">
+
+  <!-- HOME -->
+  <div id="home" class="page active">
+
+    <div class="header">
+      <div class="profile">
+        <img id="avatar" src="https://via.placeholder.com/40">
+        <div>
+          <div>Welcome back,</div>
+          <b id="username">User</b>
+        </div>
+      </div>
+      🔔
+    </div>
+
+    <div class="balance-card">
+      <h2>Total Balance (TON)</h2>
+      <h1 id="balance">0.00 TON</h1>
+      <small>Ready to withdraw anytime</small>
+    </div>
+
+    <div class="section-title">
+      <span>Pending Tasks</span>
+      <small>View All</small>
+    </div>
+
+    <!-- Telegram Task -->
+    <div class="card">
+      <div class="task-left">
+        <div class="icon">📩</div>
+        <div>
+          <div>Ton Turbo Official</div>
+          <small>Telegram Channel</small>
+        </div>
+      </div>
+      <button class="btn" onclick="startTask(0.5)">Start</button>
+    </div>
+
+    <!-- Twitter Task -->
+    <div class="card">
+      <div class="task-left">
+        <div class="icon">🐦</div>
+        <div>
+          <div>Ton Turbo Official</div>
+          <small>Twitter Follow</small>
+        </div>
+      </div>
+      <button class="btn" onclick="startTask(0.5)">Start</button>
+    </div>
+        <div>
+          <div>Invite Friend</div>
+          <small>+0.1 TON</small>
+        </div>
+      </div>
+      <button class="btn" onclick="startTask(1)">Start</button>
+    </div>
+
   </div>
 
-  <footer>
-    <div style="display:flex;gap:8px;">
-      <button class="btn" id="clearBtn">Clear</button>
-      <button class="btn ghost" id="selectAllBtn">Select All</button>
-    </div>
-    <div class="info">Grid 40x40 • Portrait</div>
-  </footer>
+  <!-- TASK CENTER -->
+  <div id="task" class="page">
+    <h2>Task Center</h2>
+    <p>Semua task ada di sini</p>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="leaderboard" class="page">
+    <h2>Leaderboard</h2>
+    <p>#1 User A - 100 TON</p>
+  </div>
+
+  <!-- REFERRAL -->
+  <div id="referral" class="page">
+    <h2>Referral</h2>
+    <p>Kode: ABC123</p>
+  </div>
+
+  <!-- WITHDRAW -->
+  <div id="withdraw" class="page">
+    <h2>Withdraw</h2>
+    <input id="wd" placeholder="Jumlah" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ccc;">
+    <button class="btn" style="width:100%; margin-top:10px;" onclick="withdraw()">Withdraw</button>
+  </div>
+
 </div>
 
-<div id="panel" role="dialog" aria-hidden="true">
-  <div style="display:flex;justify-content:space-between;align-items:center;">
-    <div><strong id="panelTitle">Tile</strong><div class="sub" id="panelPos">—</div></div>
-    <button id="closePanel" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">&times;</button>
-  </div>
-
-  <input id="imgUrl" placeholder="URL Gambar (png/jpg)"/>
-  <input id="linkUrl" placeholder="Link tujuan (https://...)"/>
-  <div class="row">
-    <button id="saveMeta" class="btn">Simpan Metadata</button>
-    <button id="buyBtn" class="btn" style="background:#22c55e">Beli (0.5 TON)</button>
-  </div>
-</div>
-
-<div id="tc-debug">
-  <div id="tc-log"></div>
+<!-- NAV -->
+<div class="nav">
+  <button onclick="showPage('home')">Home</button>
+  <button onclick="showPage('task')">Task</button>
+  <button onclick="showPage('leaderboard')">Rank</button>
+  <button onclick="showPage('referral')">Ref</button>
+  <button onclick="showPage('withdraw')">WD</button>
 </div>
 
 <script>
-/* ================= Configuration ================= */
-const GRID_SIZE = 40;
-const TILE_SIZE = 20;
-const MIN_SCALE = 0.6;
-const MAX_SCALE = 3.0;
-const INITIAL_SCALE = 1.0;
-const TILE_PRICE_NANOTON = "500000000"; // 0.5 TON string
-const STORAGE_KEY = 'toncanvas_tiles_v1';
-const RECEIVER_ADDRESS = "UQDZDbDI-vjbkEpviXoWXuAc3dTHG-MiYC8gi5tYnHxXMLDd";
-const VERIFY_API_URL = "/api/verify-purchase";
+  let balance = 0;
 
-/* ================ TonConnect Logic ================ */
-let tonConnectUI;
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
 
-async function initTonConnect() {
-    try {
-        // Inisialisasi UI
-        tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-            manifestUrl: window.location.origin + '/tonconnect-manifest.json',
-            buttonRootId: null // Kita gunakan tombol custom
-        });
+  function startTask(amount) {
+    alert('Task completed! +' + amount + ' TON');
+    balance += amount;
+    updateBalance();
+  }
 
-        // Pantau status koneksi
-        tonConnectUI.onStatusChange(wallet => {
-            const btn = document.getElementById('connectBtn');
-            if (wallet) {
-                const addr = wallet.account.address;
-                btn.textContent = addr.slice(0, 4) + '...' + addr.slice(-4);
-                appendLog("Wallet connected: " + addr);
-            } else {
-                btn.textContent = "Connect Wallet";
-                appendLog("Wallet disconnected");
-            }
-        });
-    } catch (e) {
-        appendLog("Error init TonConnect: " + e.message);
+  function updateBalance() {
+    document.getElementById('balance').innerText = balance.toFixed(2) + ' TON';
+  }
+
+  function withdraw() {
+    let val = parseFloat(document.getElementById('wd').value);
+    if(val > balance) return alert('Saldo tidak cukup');
+    balance -= val;
+    updateBalance();
+    alert('Withdraw berhasil');
+  }
+
+  // Telegram Integration
+  if(window.Telegram && window.Telegram.WebApp) {
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const user = tg.initDataUnsafe?.user;
+
+    if(user) {
+      document.getElementById('username').innerText = '@' + (user.username || user.first_name);
+      if(user.photo_url) document.getElementById('avatar').src = user.photo_url;
     }
-}
-
-/* ================ Storage helpers ================ */
-function loadTileData() {
-  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; }
-  catch (e) { return {}; }
-}
-function saveTileData(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e){}
-}
-
-/* ================ PortraitGrid class ================ */
-class PortraitGrid {
-  constructor(canvas) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.dpr = window.devicePixelRatio || 1;
-    this.gridSize = GRID_SIZE;
-    this.tileSize = TILE_SIZE;
-    this.scale = INITIAL_SCALE;
-    this.selected = new Set();
-    this.hover = null;
-    this.isDragging = false;
-    this.tileData = loadTileData();
-    this._needsRedraw = true;
-    this._bindEvents();
-    this._resize();
-    window.addEventListener('resize', () => this._resize());
-    this._loop();
   }
-
-  clear() { this.selected.clear(); this._mark(); }
-  selectAll() { 
-    for (let x=0;x<this.gridSize;x++) for (let y=0;y<this.gridSize;y++) this.selected.add(`${x},${y}`); 
-    this._mark(); 
-  }
-  getTileKey(x,y){ return `${x},${y}`; }
-  getTileMeta(x,y){ return this.tileData[this.getTileKey(x,y)] || null; }
-  setTileMeta(x,y,meta){ 
-    this.tileData[this.getTileKey(x,y)] = Object.assign({}, this.tileData[this.getTileKey(x,y)]||{}, meta); 
-    saveTileData(this.tileData); 
-    this._mark(); 
-  }
-
-  _bindEvents() {
-    this.canvas.addEventListener('pointerdown', (e) => {
-      this.isDragging = true;
-      const t = this._screenToTile(e.clientX, e.clientY);
-      if(t) this.selected.add(`${t.x},${t.y}`);
-      this._mark();
-    });
-    this.canvas.addEventListener('pointermove', (e) => {
-      const t = this._screenToTile(e.clientX, e.clientY);
-      this.hover = t;
-      if (this.isDragging && t) this.selected.add(`${t.x},${t.y}`);
-      if (t) _updatePosLabel(t);
-      this._mark();
-    });
-    this.canvas.addEventListener('pointerup', (e) => {
-      this.isDragging = false;
-      const t = this._screenToTile(e.clientX, e.clientY);
-      if (t && !this.isDragging) openPanelForTile(t.x, t.y);
-    });
-  }
-
-  _screenToTile(clientX, clientY){
-    const rect = this.canvas.getBoundingClientRect();
-    const px = (clientX - rect.left) * (this.canvas.width / rect.width);
-    const py = (clientY - rect.top) * (this.canvas.height / rect.height);
-    const gridPixel = this.gridSize * this.tileSize * this.scale * this.dpr;
-    const left = (this.canvas.width - gridPixel) / 2;
-    const top = (this.canvas.height - gridPixel) / 2;
-    const tx = Math.floor((px - left) / (this.tileSize * this.scale * this.dpr));
-    const ty = Math.floor((py - top) / (this.tileSize * this.scale * this.dpr));
-    if (tx<0||ty<0||tx>=this.gridSize||ty>=this.gridSize) return null;
-    return {x:tx,y:ty};
-  }
-
-  _resize(){
-    const size = Math.min(window.innerWidth - 30, window.innerHeight - 200, 420);
-    this.canvas.style.width = size + 'px';
-    this.canvas.style.height = size + 'px';
-    this.canvas.width = size * this.dpr;
-    this.canvas.height = size * this.dpr;
-    this._mark();
-  }
-
-  _mark(){ this._needsRedraw = true; }
-  _loop(){ requestAnimationFrame(()=>this._loop()); if (this._needsRedraw){ this._needsRedraw=false; this._draw(); } }
-
-  _draw(){
-    const ctx = this.ctx;
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
-    const gridPixel = this.gridSize * this.tileSize * this.scale * this.dpr;
-    const left = (this.canvas.width - gridPixel) / 2;
-    const top = (this.canvas.height - gridPixel) / 2;
-
-    ctx.setTransform(this.scale * this.dpr, 0, 0, this.scale * this.dpr, left, top);
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(0,0,this.gridSize*this.tileSize,this.gridSize*this.tileSize);
-
-    // Draw lines
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-    for(let i=0; i<=this.gridSize; i++) {
-        ctx.moveTo(i*this.tileSize, 0); ctx.lineTo(i*this.tileSize, this.gridSize*this.tileSize);
-        ctx.moveTo(0, i*this.tileSize); ctx.lineTo(this.gridSize*this.tileSize, i*this.tileSize);
-    }
-    ctx.stroke();
-
-    // Draw selected
-    ctx.fillStyle = 'rgba(14, 165, 233, 0.4)';
-    this.selected.forEach(k => {
-        const [x,y] = k.split(',').map(Number);
-        ctx.fillRect(x*this.tileSize, y*this.tileSize, this.tileSize, this.tileSize);
-    });
-  }
-}
-
-/* ================ UI & Purchase ================ */
-let gridInstance;
-const panelEl = document.getElementById('panel');
-const panelState = { key: null };
-
-document.addEventListener('DOMContentLoaded', () => {
-  initTonConnect();
-  const canvas = document.getElementById('portraitCanvas');
-  gridInstance = new PortraitGrid(canvas);
-
-  document.getElementById('connectBtn').addEventListener('click', async () => {
-    if (tonConnectUI.connected) {
-        await tonConnectUI.disconnect();
-    } else {
-        await tonConnectUI.openModal();
-    }
-  });
-
-  document.getElementById('buyBtn').addEventListener('click', async () => {
-    if (!tonConnectUI.connected) {
-        alert("Hubungkan wallet dulu!");
-        tonConnectUI.openModal();
-        return;
-    }
-    const [x,y] = panelState.key.split(',').map(Number);
-    
-    const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 360,
-        messages: [{ address: UQDZDbDI-vjbkEpviXoWXuAc3dTHG-MiYC8gi5tYnHxXMLDd, amount: TILE_PRICE_NANOTON }]
-    };
-
-    try {
-        const result = await tonConnectUI.sendTransaction(transaction);
-        appendLog("Transaction sent: " + result.boc);
-        gridInstance.setTileMeta(x, y, { owner: 'Me', img: document.getElementById('imgUrl').value });
-        alert("Pembelian Berhasil!");
-        closePanel();
-    } catch (e) {
-        alert("Transaksi gagal/dibatalkan");
-    }
-  });
-
-  document.getElementById('clearBtn').addEventListener('click', () => gridInstance.clear());
-  document.getElementById('selectAllBtn').addEventListener('click', () => gridInstance.selectAll());
-  document.getElementById('closePanel').addEventListener('click', closePanel);
-});
-
-function openPanelForTile(x,y){
-  panelState.key = `${x},${y}`;
-  document.getElementById('panelTitle').textContent = `Tile ${x},${y}`;
-  panelEl.style.display = 'block';
-}
-function closePanel(){ panelEl.style.display='none'; }
-function _updatePosLabel(t){ document.getElementById('posLabel').textContent = `Pos: (${t.x},${t.y})`; }
-function appendLog(msg) {
-  const log = document.getElementById('tc-log');
-  log.innerHTML += `<div>${msg}</div>`;
-  console.log(msg);
-}
 </script>
+
 </body>
 </html>
