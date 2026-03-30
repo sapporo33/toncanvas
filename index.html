@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,10 +12,11 @@
             --primary-color: #38bdf8;
             --text-color: #f8fafc;
             --accent-color: #0ea5e9;
+            --success-color: #22c55e;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
@@ -31,19 +32,53 @@
             padding: 20px;
             text-align: center;
             background: linear-gradient(135deg, var(--accent-color), var(--bg-color));
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
+
+        /* Profile Section */
+        .profile-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px dashed rgba(56, 189, 248, 0.3);
+        }
+
+        #user-photo {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-color);
+            background-color: #334155;
+            object-fit: cover;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #user-name { font-weight: bold; font-size: 1.1rem; }
+        #user-username { color: var(--primary-color); font-size: 0.85rem; }
 
         /* Main Content */
         main {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
-            padding-bottom: 80px;
+            padding-bottom: 90px;
         }
 
-        .page { display: none; }
+        .page { display: none; animation: fadeIn 0.3s ease; }
         .active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         .card {
             background-color: var(--container-bg);
@@ -53,32 +88,34 @@
             border: 1px solid #334155;
         }
 
-        h2 { margin-top: 0; color: var(--primary-color); }
+        .stat-val { font-size: 1.8rem; font-weight: bold; color: var(--primary-color); margin-top: 5px; }
 
-        /* Buttons & Tasks */
+        /* Tasks */
         .btn-task {
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: #334155;
             padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 10px;
+            border-radius: 12px;
+            margin-bottom: 12px;
             text-decoration: none;
             color: white;
-            transition: 0.3s;
+            cursor: pointer;
+            transition: background 0.2s;
         }
 
-        .btn-task:hover { background: #475569; }
+        .btn-task:active { background: #475569; }
 
         .status-badge {
-            font-size: 0.8rem;
-            padding: 4px 8px;
-            border-radius: 5px;
+            font-size: 0.75rem;
+            padding: 5px 10px;
+            border-radius: 6px;
             background: var(--accent-color);
+            font-weight: bold;
         }
 
-        /* Navigation Bottom */
+        /* Navigation */
         nav {
             position: fixed;
             bottom: 0;
@@ -86,17 +123,22 @@
             background-color: var(--container-bg);
             display: flex;
             justify-content: space-around;
-            padding: 15px 0;
+            padding: 12px 0 25px 0; /* Extra bottom padding for mobile gestures */
             border-top: 1px solid #334155;
+            z-index: 100;
         }
 
         nav button {
             background: none;
             border: none;
             color: #94a3b8;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
 
         nav button.active-nav {
@@ -104,79 +146,121 @@
             font-weight: bold;
         }
 
-        .stat-val { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
+        .copy-btn {
+            margin-top: 10px;
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-color);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <h1 style="margin:0; font-size: 1.5rem;">TON TURBO</h1>
+    <h1 style="margin:0; font-size: 1.4rem; letter-spacing: 1px;">TON TURBO</h1>
 </header>
 
 <main>
     <section id="home" class="page active">
-        <div class="card" style="text-align: center;">
-            <p>Total Balance</p>
-            <div class="stat-val" id="balance">0 $TON</div>
+        <div class="profile-container">
+            <img id="user-photo" src="https://via.placeholder.com/60" alt="Avatar">
+            <div class="user-details">
+                <span id="user-name">Loading...</span>
+                <span id="user-username">@username</span>
+            </div>
         </div>
+
+        <div class="card" style="text-align: center;">
+            <p style="margin:0; color: #94a3b8;">Total Balance</p>
+            <div class="stat-val" id="balance">0 $TURBO</div>
+        </div>
+        
         <div class="card">
-            <h3>Welcome!</h3>
-            <p>Complete tasks to collect $TON coins!.</p>
+            <h3 style="margin-top:0;">Welcome, Explorer!</h3>
+            <p style="font-size: 0.9rem; line-height: 1.4; color: #cbd5e1;">
+                Complete simple social tasks to accumulate $TURBO tokens before the official launch. Stay tuned for updates!
+            </p>
         </div>
     </section>
 
     <section id="task" class="page">
-        <h2>Task </h2>
+        <h2 style="margin-bottom: 20px;">Airdrop Tasks</h2>
         <div class="btn-task" onclick="completeTask('tg', 'https://t.me/TonTurboOfficial')">
-            <span>Follow Telegram Channel</span>
-            <span id="status-tg" class="status-badge">+1 $TON</span>
+            <div>
+                <div style="font-weight: 500;">Join Telegram Channel</div>
+                <div style="font-size: 0.7rem; color: #94a3b8;">Official Community</div>
+            </div>
+            <span id="status-tg" class="status-badge">+50 $TURBO</span>
         </div>
         <div class="btn-task" onclick="completeTask('x', 'https://x.com/tonturboxyz')">
-            <span>Follow X (Twitter)</span>
-            <span id="status-x" class="status-badge">+1 $TON</span>
+            <div>
+                <div style="font-weight: 500;">Follow X (Twitter)</div>
+                <div style="font-size: 0.7rem; color: #94a3b8;">Latest News</div>
+            </div>
+            <span id="status-x" class="status-badge">+50 $TURBO</span>
         </div>
     </section>
 
     <section id="referral" class="page">
-        <h2>Referral</h2>
+        <h2>Referral Program</h2>
         <div class="card">
-            <p>Invite friends and earn 0.1 $TON per person.</p>
-            <input type="text" value="https://t.me/TonTurboBot?start=12345" readonly 
-                   style="width: 100%; padding: 10px; background: #0f172a; border: none; color: #38bdf8; border-radius: 5px;">
-            <button style="margin-top: 10px; width: 100%; padding: 10px; background: var(--accent-color); border: none; border-radius: 5px; color: white;">Copy Link</button>
+            <p style="font-size: 0.95rem;">Invite friends and earn <span style="color:var(--primary-color);">20 $TURBO</span> per successful referral.</p>
+            <input type="text" id="ref-link" value="https://t.me/TonTurboBot?start=12345" readonly 
+                   style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; border-radius: 8px; box-sizing: border-box;">
+            <button class="copy-btn" onclick="copyReferral()">Copy Referral Link</button>
         </div>
     </section>
 
     <section id="withdraw" class="page">
-        <h2>Withdraw</h2>
-        <div class="card">
-            <p>Minimum Withdraw: 5 $TON</p>
-            <button disabled style="width: 100%; padding: 15px; border-radius: 10px; background: #475569; color: #94a3b8; border: none;">
-                Coming Soon
+        <h2>Withdrawal</h2>
+        <div class="card" style="text-align: center; padding: 40px 20px;">
+            <p style="color: #94a3b8;">Minimum Requirement: 500 $TURBO</p>
+            <button disabled style="width: 100%; padding: 15px; border-radius: 12px; background: #334155; color: #64748b; border: none; font-weight: bold; font-size: 1rem;">
+                Withdrawal Coming Soon
             </button>
+            <p style="font-size: 0.8rem; margin-top: 15px; color: #475569;">Token distribution will start after the TGE event.</p>
         </div>
     </section>
 </main>
 
 <nav>
-    <button onclick="showPage('home')" id="nav-home" class="active-nav">Home</button>
-    <button onclick="showPage('task')" id="nav-task">Task</button>
-    <button onclick="showPage('referral')" id="nav-referral">Referral</button>
-    <button onclick="showPage('withdraw')" id="nav-withdraw">Withdraw</button>
+    <button onclick="showPage('home')" id="nav-home" class="active-nav"><span>🏠</span>Home</button>
+    <button onclick="showPage('task')" id="nav-task"><span>📋</span>Tasks</button>
+    <button onclick="showPage('referral')" id="nav-referral"><span>👥</span>Referral</button>
+    <button onclick="showPage('withdraw')" id="nav-withdraw"><span>💳</span>Withdraw</button>
 </nav>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
+    tg.headerColor = '#0ea5e9';
 
-    let balance = 0;
-    const completedTasks = JSON.parse(localStorage.getItem('tasks')) || {};
+    const completedTasks = JSON.parse(localStorage.getItem('tonturbo_tasks')) || {};
 
-    // Inisialisasi data dari localStorage
     function init() {
-        if(completedTasks.tg) updateUI('tg');
-        if(completedTasks.x) updateUI('x');
+        loadUserData();
+        if(completedTasks.tg) updateTaskUI('tg');
+        if(completedTasks.x) updateTaskUI('x');
         calculateBalance();
+    }
+
+    function loadUserData() {
+        const user = tg.initDataUnsafe.user;
+        if (user) {
+            document.getElementById('user-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+            document.getElementById('user-username').innerText = user.username ? '@' + user.username : 'Explorer';
+            if (user.photo_url) {
+                document.getElementById('user-photo').src = user.photo_url;
+            }
+        } else {
+            document.getElementById('user-name').innerText = "Web3 User";
+            document.getElementById('user-username').innerText = "@guest";
+        }
     }
 
     function showPage(pageId) {
@@ -185,142 +269,54 @@
         
         document.getElementById(pageId).classList.add('active');
         document.getElementById('nav-' + pageId).classList.add('active-nav');
+        tg.HapticFeedback.impactOccurred('light');
     }
 
     function completeTask(type, url) {
         if (completedTasks[type]) {
-            tg.showAlert("This task is complete!");
+            tg.showAlert("Task already completed!");
             window.open(url, '_blank');
             return;
         }
 
         window.open(url, '_blank');
         
-        // Simulasi verifikasi (biasanya via backend)
+        // Simulating verification delay
         setTimeout(() => {
-            completedTasks[type] = true;
-            localStorage.setItem('tasks', JSON.stringify(completedTasks));
-            updateUI(type);
-            calculateBalance();
-            tg.showConfirm("Apakah kamu sudah follow? Jika ya, poin akan ditambahkan.");
-        }, 2000);
+            tg.showConfirm("Did you follow our account? Points will be added after verification.", (confirmed) => {
+                if(confirmed) {
+                    completedTasks[type] = true;
+                    localStorage.setItem('tonturbo_tasks', JSON.stringify(completedTasks));
+                    updateTaskUI(type);
+                    calculateBalance();
+                    tg.HapticFeedback.notificationOccurred('success');
+                }
+            });
+        }, 1500);
     }
 
-    function updateUI(type) {
+    function updateTaskUI(type) {
         const badge = document.getElementById('status-' + type);
-        badge.innerText = "Finished! ✅";
-        badge.style.background = "#22c55e";
+        badge.innerText = "Completed ✅";
+        badge.style.background = "var(--success-color)";
     }
 
     function calculateBalance() {
-        balance = 0;
-        if(completedTasks.tg) balance += 1;
-        if(completedTasks.x) balance += 1;
-        document.getElementById('balance').innerText = balance + " $TON";
+        let balance = 0;
+        if(completedTasks.tg) balance += 50;
+        if(completedTasks.x) balance += 50;
+        document.getElementById('balance').innerText = balance + " $TURBO";
+    }
+
+    function copyReferral() {
+        const copyText = document.getElementById("ref-link");
+        copyText.select();
+        navigator.clipboard.writeText(copyText.value);
+        tg.showAlert("Referral link copied to clipboard!");
     }
 
     init();
 </script>
-<style>
-    /* ... kode CSS sebelumnya ... */
 
-    .profile-container {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        background: rgba(255, 255, 255, 0.05);
-        padding: 15px;
-        border-radius: 15px;
-        margin-bottom: 20px;
-        border: 1px dashed rgba(56, 189, 248, 0.3);
-    }
-
-    #user-photo {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        border: 2px solid var(--primary-color);
-        background-color: #334155;
-    }
-
-    .user-details {
-        display: flex;
-        flex-direction: column;
-        text-align: left;
-    }
-
-    #user-name {
-        font-weight: bold;
-        font-size: 1.1rem;
-    }
-
-    #user-username {
-        color: var(--primary-color);
-        font-size: 0.9rem;
-    }
-</style>
-
-<section id="home" class="page active">
-    <div class="profile-container">
-        <img id="user-photo" src="https://via.placeholder.com/60" alt="User Photo">
-        <div class="user-details">
-            <span id="user-name">Loading...</span>
-            <span id="user-username">@username</span>
-        </div>
-    </div>
-
-    <div class="card" style="text-align: center;">
-        <p>Total Balance</p>
-        <div class="stat-val" id="balance">0 $TURBO</div>
-    </div>
-    
-    <div class="card">
-        <h3>Selamat Datang!</h3>
-        <p>Selesaikan tugas untuk mengumpulkan token $TURBO sebelum listing.</p>
-    </div>
-</section>
-
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-
-    // Fungsi untuk mengambil data user Telegram
-    function loadUserData() {
-        const user = tg.initDataUnsafe.user;
-
-        if (user) {
-            // Set Nama Lengkap
-            document.getElementById('user-name').innerText = `${user.first_name} ${user.last_name || ''}`;
-            
-            // Set Username
-            if (user.username) {
-                document.getElementById('user-username').innerText = `@${user.username}`;
-            } else {
-                document.getElementById('user-username').innerText = "No Username";
-            }
-
-            // Set Foto Profil (Jika ada)
-            if (user.photo_url) {
-                document.getElementById('user-photo').src = user.photo_url;
-            }
-        } else {
-            // Fallback jika dibuka di luar Telegram
-            document.getElementById('user-name').innerText = "Guest User";
-            document.getElementById('user-username').innerText = "@guest";
-        }
-    }
-
-    // Panggil fungsi loadUserData di dalam init
-    function init() {
-        loadUserData(); // Tambahkan ini
-        if(completedTasks.tg) updateUI('tg');
-        if(completedTasks.x) updateUI('x');
-        calculateBalance();
-    }
-
-    // ... sisanya kode JS sebelumnya ...
-    init();
-</script>
-    
 </body>
 </html>
