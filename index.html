@@ -1,145 +1,44 @@
-// LOAD
-let balance = parseFloat(localStorage.getItem("balance")) || 0;
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Miniapp TON</title>
+  <style>
+    /* styling minimal agar tidak cuma teks polos */
+    body { font-family: system-ui, Arial; padding: 20px; }
+    .btn { padding: 8px 12px; margin: 6px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Miniapp TON</h1>
+    <div>
+      <strong>Pengguna:</strong>
+      <span id="username">-</span>
+      <img id="avatar" src="" alt="" style="width:36px;height:36px;border-radius:50%;vertical-align:middle;margin-left:8px;display:none;">
+    </div>
+  </header>
 
-let taskState = JSON.parse(localStorage.getItem("taskState")) || {
-  telegram: {
-    started: false,
-    claimed: false
-  }
-};
+  <main>
+    <section>
+      <div><strong>Saldo:</strong> <span id="balance">0.00 TON</span></div>
+    </section>
 
-function saveData() {
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("taskState", JSON.stringify(taskState));
-}
+    <section style="margin-top:12px;">
+      <!-- Pastikan onclick memanggil startTask dan tombol bertipe button -->
+      <button id="tgBtn" class="btn" type="button" onclick="startTask('https://t.me/your_channel', 0.25)">Start</button>
+      <button class="btn" type="button" onclick="inviteTask()">Invite</button>
+    </section>
 
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
+    <section style="margin-top:12px;">
+      <input id="wd" type="number" placeholder="Jumlah withdraw" />
+      <button class="btn" type="button" onclick="withdraw()">Withdraw</button>
+    </section>
+  </main>
 
-function updateBalance() {
-  document.getElementById('balance').innerText = balance.toFixed(2) + ' TON';
-}
-
-// ================= TASK =================
-function startTask(url, amount) {
-
-  // TELEGRAM
-  if (url.includes("t.me")) {
-
-    const btn = document.getElementById("tgBtn");
-
-    // HARD LOCK
-    if (taskState.telegram.claimed) {
-      alert("Task sudah selesai");
-      return;
-    }
-
-    // START
-    if (!taskState.telegram.started) {
-
-      if (window.Telegram?.WebApp) {
-        Telegram.WebApp.openTelegramLink(url);
-      } else {
-        window.open(url, '_blank');
-      }
-
-      taskState.telegram.started = true;
-      saveData();
-
-      btn.innerText = "Claim";
-      return;
-    }
-
-    // CLAIM
-    let confirmJoin = confirm("Sudah join channel?");
-
-    if (!confirmJoin) {
-      alert("Kamu belum join!");
-      return;
-    }
-
-    taskState.telegram.claimed = true;
-    balance += 0.25;
-
-    saveData();
-    updateBalance();
-
-    btn.innerText = "Done";
-    btn.disabled = true;
-
-    alert("Reward +0.25 TON");
-    return;
-  }
-
-  // TWITTER
-  window.open(url, '_blank');
-
-  setTimeout(() => {
-    balance += amount;
-    saveData();
-    updateBalance();
-    alert('Reward +' + amount + ' TON');
-  }, 1500);
-}
-
-// INVITE
-function inviteTask() {
-  const link = "https://t.me/your_bot?start=ref123";
-
-  navigator.clipboard.writeText(link);
-  alert("Link referral disalin!");
-
-  balance += 0.1;
-  saveData();
-  updateBalance();
-}
-
-// WITHDRAW
-function withdraw() {
-  let val = parseFloat(document.getElementById('wd').value);
-
-  if (isNaN(val)) return alert('Masukkan angka');
-  if (val <= 0) return alert('Harus lebih dari 0');
-  if (val > balance) return alert('Saldo tidak cukup');
-
-  balance -= val;
-  saveData();
-  updateBalance();
-
-  alert('Withdraw berhasil');
-}
-
-// INIT
-function initApp() {
-  updateBalance();
-
-  const btn = document.getElementById("tgBtn");
-
-  if (taskState.telegram.claimed) {
-    btn.innerText = "Done";
-    btn.disabled = true;
-  } else if (taskState.telegram.started) {
-    btn.innerText = "Claim";
-  }
-}
-
-initApp();
-
-// TELEGRAM USER
-if (window.Telegram?.WebApp) {
-  const tg = window.Telegram.WebApp;
-  tg.expand();
-
-  const user = tg.initDataUnsafe?.user;
-
-  if (user) {
-    document.getElementById('username').innerText =
-      '@' + (user.username || user.first_name);
-
-    if (user.photo_url) {
-      document.getElementById('avatar').src = user.photo_url;
-    }
-  }
-}
+  <!-- Panggil file JS di sini, sebelum penutupan body -->
+  <!-- Ganti "app.js" dengan nama file JS yang kamu deploy -->
+  <script src="/app.js"></script>
+</body>
+</html>
