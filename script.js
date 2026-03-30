@@ -64,15 +64,35 @@ window.startTask = function(url, amount) {
   const isTelegramLink = typeof realUrl === 'string' && realUrl.includes('t.me');
   const isTelegramTaskId = typeof taskId === 'string' && taskId.toLowerCase().includes('telegram');
 
-  if (isTelegramLink || isTelegramTaskId) {
+  if (isTelegramLink || isTelegramTaskId || taskId === 'invite' || taskId === 'twitter_follow') {
     // try to find button: prefer btn-<taskId> if exists, fallback to tgBtn
     const btnById = document.getElementById('btn-' + taskId);
     const btnFallback = document.getElementById('tgBtn');
     const btn = btnById || btnFallback;
 
-    // HARD LOCK
-    if (taskState.telegram.claimed) {
-      if (btn) { btn.innerText = 'Done'; btn.disabled = true; }
+    // For invite special case: copy link and reward immediately
+    if (taskId === 'invite') {
+      if (taskState.invite && taskState.invite.claimed) {
+        if (btn) { btn.innerText = btn.getAttribute('data-done-text') || 'Done'; btn.disabled = true; }
+        alert('Task invite sudah selesai');
+        return;
+      }
+      const link = 'https://t.me/your_bot?start=ref123';
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(link).catch(()=>{});
+      // ensure taskState.invite exists
+      if (!taskState.invite) taskState.invite = { claimed: false };
+      taskState.invite.claimed = true;
+      balance += (typeof realAmount === 'number' ? realAmount : 0.1);
+      saveData();
+      updateBalance();
+      if (btn) { btn.innerText = btn.getAttribute('data-done-text') || 'Done'; btn.disabled = true; }
+      alert('Link referral disalin! Reward +' + (realAmount || 0.1) + ' TON');
+      return;
+    }
+
+    // HARD LOCK (legacy single telegram object)
+    if (taskState.telegram && taskState.telegram.claimed) {
+      if (btn) { btn.innerText = btn.getAttribute('data-done-text') || 'Done'; btn.disabled = true; }
       alert('Task sudah selesai');
       return;
     }
@@ -83,14 +103,17 @@ window.startTask = function(url, amount) {
         try { Telegram.WebApp.openTelegramLink(realUrl); } catch (e) { window.open(realUrl, '_blank'); }
       } else if (isTelegramLink) {
         window.open(realUrl, '_blank');
-      } else {
-        // no link available, just proceed to mark started (keeps behavior safe)
+      } else if (taskId === 'twitter_follow' && typeof realUrl === 'string') {
+        // open twitter link
+        try { window.open(realUrl, '_blank'); } catch (e) {}
       }
 
+      // mark started on legacy telegram object
+      if (!taskState.telegram) taskState.telegram = { started: false, claimed: false };
       taskState.telegram.started = true;
       saveData();
 
-      if (btn) btn.innerText = 'Claim';
+      if (btn) btn.innerText = btn.getAttribute('data-claim-text') || 'Claim';
       return;
     }
 
@@ -106,8 +129,7 @@ window.startTask = function(url, amount) {
       saveData();
       updateBalance();
 
-      if (btn) { btn.innerText = 'Done'; btn.disabled = true; }
-
+      if (btn) { btn.innerText = btn.getAttribute('data-done-text') || 'Done'; btn.disabled = true; }
       alert('Reward +0.25 TON');
       return;
     }
@@ -125,7 +147,7 @@ window.startTask = function(url, amount) {
   }, 1500);
 };
 
-// INVITE
+// INVITE (keberadaan fungsi tetap untuk kompatibilitas)
 function inviteTask() {
   const link = 'https://t.me/your_bot?start=ref123';
   if (navigator.clipboard?.writeText) navigator.clipboard.writeText(link).catch(()=>{});
@@ -153,14 +175,14 @@ function initApp() {
   updateBalance();
   const btn = document.getElementById('tgBtn');
   if (!btn) return console.warn('tgBtn tidak ditemukan di DOM');
-  if (taskState.telegram.claimed === true) {
-    btn.innerText = 'Done';
+  if (taskState.telegram && taskState.telegram.claimed === true) {
+    btn.innerText = btn.getAttribute('data-done-text') || 'Done';
     btn.disabled = true;
-  } else if (taskState.telegram.started === true) {
-    btn.innerText = 'Claim';
+  } else if (taskState.telegram && taskState.telegram.started === true) {
+    btn.innerText = btn.getAttribute('data-claim-text') || 'Claim';
     btn.disabled = false;
   } else {
-    btn.innerText = 'Start';
+    btn.innerText = btn.getAttribute('data-start-text') || 'Start';
     btn.disabled = false;
   }
 }
