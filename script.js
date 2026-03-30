@@ -1,46 +1,54 @@
-// ================= LOAD DATA =================
+// LOAD (AMAN)
 let balance = parseFloat(localStorage.getItem("balance")) || 0;
 
-let taskState = JSON.parse(localStorage.getItem("taskState")) || {
-  telegram: {
-    started: false,
-    claimed: false
-  }
-};
+let taskState;
+try {
+  taskState = JSON.parse(localStorage.getItem("taskState"));
+} catch (e) {
+  taskState = null;
+}
 
-// ================= SAVE =================
+if (!taskState) {
+  taskState = {
+    telegram: {
+      started: false,
+      claimed: false
+    }
+  };
+}
+
+// SAVE
 function saveData() {
   localStorage.setItem("balance", balance);
   localStorage.setItem("taskState", JSON.stringify(taskState));
 }
 
-// ================= NAV =================
+// NAV
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
-// ================= BALANCE =================
+// BALANCE
 function updateBalance() {
   document.getElementById('balance').innerText = balance.toFixed(2) + ' TON';
 }
 
-// ================= TELEGRAM TASK =================
+// ================= TASK =================
 function startTask(url, amount) {
 
-  // ==== TELEGRAM ====
+  // TELEGRAM ONLY
   if (url.includes("t.me")) {
 
-    const btn = document.querySelectorAll('.card button')[0];
+    const btn = document.getElementById("tgBtn");
 
-    // 🔒 HARD LOCK (INI YANG PENTING)
-    if (taskState.telegram.claimed) {
-      alert("❌ Task sudah diselesaikan");
+    // 🔒 SUDAH SELESAI → STOP TOTAL
+    if (taskState.telegram.claimed === true) {
       return;
     }
 
-    // START
-    if (!taskState.telegram.started) {
+    // 🚀 START (HANYA SEKALI)
+    if (taskState.telegram.started === false) {
 
       if (window.Telegram?.WebApp) {
         Telegram.WebApp.openTelegramLink(url);
@@ -55,91 +63,81 @@ function startTask(url, amount) {
       return;
     }
 
-    // CLAIM
-    if (taskState.telegram.started && !taskState.telegram.claimed) {
+    // 🎯 CLAIM (HANYA SEKALI)
+    if (taskState.telegram.started === true && taskState.telegram.claimed === false) {
 
       let confirmJoin = confirm("Sudah join channel?");
 
-      if (!confirmJoin) {
-        alert("❌ Kamu belum join!");
-        return;
-      }
+      if (!confirmJoin) return;
 
       taskState.telegram.claimed = true;
-
       balance += 0.25;
+
       saveData();
       updateBalance();
 
       btn.innerText = "Done";
       btn.disabled = true;
 
-      alert("✅ Reward +0.25 TON");
       return;
     }
 
     return;
   }
 
-  // ==== TWITTER ====
+  // TWITTER
   window.open(url, '_blank');
 
   setTimeout(() => {
     balance += amount;
     saveData();
     updateBalance();
-    alert('Reward +' + amount + ' TON');
   }, 1500);
 }
 
-// ================= INVITE =================
+// INVITE
 function inviteTask() {
   const link = "https://t.me/your_bot?start=ref123";
 
   navigator.clipboard.writeText(link);
-  alert("Link referral disalin!");
 
   balance += 0.1;
   saveData();
   updateBalance();
 }
 
-// ================= WITHDRAW =================
+// WITHDRAW
 function withdraw() {
   let val = parseFloat(document.getElementById('wd').value);
 
-  if (isNaN(val)) return alert('Masukkan angka');
-  if (val <= 0) return alert('Harus lebih dari 0');
-  if (val > balance) return alert('Saldo tidak cukup');
+  if (isNaN(val)) return;
+  if (val <= 0) return;
+  if (val > balance) return;
 
   balance -= val;
   saveData();
   updateBalance();
-
-  alert('Withdraw berhasil');
 }
 
-// ================= INIT =================
+// INIT
 function initApp() {
   updateBalance();
 
-  const btn = document.querySelectorAll('.card button')[0];
+  const btn = document.getElementById("tgBtn");
 
-  // 🔒 HARD LOCK DI UI
-  if (taskState.telegram.claimed) {
+  if (!btn) return;
+
+  if (taskState.telegram.claimed === true) {
     btn.innerText = "Done";
     btn.disabled = true;
-    return;
-  }
-
-  if (taskState.telegram.started) {
+  } else if (taskState.telegram.started === true) {
     btn.innerText = "Claim";
   }
 }
 
 initApp();
 
-// ================= TELEGRAM USER =================
+// TELEGRAM USER
 if (window.Telegram?.WebApp) {
   const tg = window.Telegram.WebApp;
   tg.expand();
