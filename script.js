@@ -33,6 +33,12 @@ function startTask(url, amount) {
 
     const btn = document.querySelectorAll('.card button')[0];
 
+    // 🔒 HARD LOCK (INI YANG PENTING)
+    if (taskState.telegram.claimed) {
+      alert("❌ Task sudah diselesaikan");
+      return;
+    }
+
     // START
     if (!taskState.telegram.started) {
 
@@ -50,7 +56,7 @@ function startTask(url, amount) {
     }
 
     // CLAIM
-    if (!taskState.telegram.claimed) {
+    if (taskState.telegram.started && !taskState.telegram.claimed) {
 
       let confirmJoin = confirm("Sudah join channel?");
 
@@ -119,10 +125,14 @@ function initApp() {
 
   const btn = document.querySelectorAll('.card button')[0];
 
+  // 🔒 HARD LOCK DI UI
   if (taskState.telegram.claimed) {
     btn.innerText = "Done";
     btn.disabled = true;
-  } else if (taskState.telegram.started) {
+    return;
+  }
+
+  if (taskState.telegram.started) {
     btn.innerText = "Claim";
   }
 }
