@@ -1,60 +1,44 @@
-// ui-sync.js
-(function () {
+// ui-sync.js (safe, non-invasive)
+(function(){
   'use strict';
+  const MAP = { 'tgBtn':'telegram', 'btn-twitter':'twitter_follow', 'btn-invite':'invite' };
 
-  // Daftar tombol yang ingin disinkronkan: id tombol => task key di localStorage
-  const BUTTON_MAP = {
-    'tgBtn': 'telegram',        // kompatibel dengan app.js lama
-    'btn-twitter': 'twitter_follow',
-    'btn-invite': 'invite'
-  };
+  function safeParse(s){ try{ return JSON.parse(s); }catch(e){return null;} }
+  function readState(){ return safeParse(localStorage.getItem('taskState')) || null; }
+  function readBalance(){ const b = parseFloat(localStorage.getItem('balance')); return Number.isFinite(b)?b:0; }
 
-  function safeParse(json) {
-    try { return JSON.parse(json); } catch (e) { return null; }
-  }
-
-  function readTaskState() {
-    const raw = localStorage.getItem('taskState');
-    const ts = safeParse(raw);
-    return ts || null;
-  }
-
-  function readBalance() {
-    const b = parseFloat(localStorage.getItem('balance'));
-    return Number.isFinite(b) ? b : 0;
-  }
-
-  function applyStateToButton(btn, state) {
-    if (!btn) return;
-    // prefer explicit attributes for texts, fallback ke default
+  function applyToButton(btnId, state){
+    const btn = document.getElementById(btnId);
+    if(!btn) return;
     const startText = btn.getAttribute('data-start-text') || 'Start';
     const claimText = btn.getAttribute('data-claim-text') || 'Claim';
     const doneText  = btn.getAttribute('data-done-text')  || 'Done';
 
-    if (!state) {
-      btn.dataset.state = '';
-      btn.disabled = false;
-      btn.innerText = startText;
+    if(!state){
+      btn.dataset.state = btn.dataset.state || '';
+      btn.disabled = btn.disabled || false;
+      // do not change innerText to avoid conflict with app.js
       return;
     }
 
-    if (state.claimed) {
+    if(state.claimed){
       btn.dataset.state = 'done';
-      btn.disabled = true;
-      btn.innerText = doneText;
-    } else if (state.started) {
+      if(!btn.disabled) btn.disabled = true;
+      // do not override innerText if app.js already set it
+      if(!btn.innerText || btn.innerText.trim() === '') btn.innerText = doneText;
+    } else if(state.started){
       btn.dataset.state = 'claim';
-      btn.disabled = false;
-      btn.innerText = claimText;
+      if(btn.disabled) btn.disabled = false;
+      if(!btn.innerText || btn.innerText.trim() === '') btn.innerText = claimText;
     } else {
       btn.dataset.state = '';
-      btn.disabled = false;
-      btn.innerText = startText;
+      if(btn.disabled) btn.disabled = false;
+      if(!btn.innerText || btn.innerText.trim() === '') btn.innerText = startText;
     }
   }
 
-  function applyAll() {
-    const ts = readTaskState();
+  function applyAll(){
+    const ts = readState();
 
     // Backward compatibility: if ts has only telegram object (legacy), map it
     const legacyTelegram = ts && ts.telegram && !ts.telegram_channel && !ts.twitter_follow && !ts.invite;
@@ -65,56 +49,30 @@
       invite: ts && ts.invite
     };
 
-    // Update each button according to BUTTON_MAP
-    Object.keys(BUTTON_MAP).forEach(btnId => {
-      const taskKey = BUTTON_MAP[btnId];
+    Object.keys(MAP).forEach(btnId=>{
+      const taskKey = MAP[btnId];
       const btn = document.getElementById(btnId);
-      // Resolve which state object to use:
-      // prefer explicit taskKey in mapped, else fallback to legacy telegram
-      let stateObj = mapped[taskKey] || mapped.telegram || null;
-      // For btn-twitter map to twitter_follow explicitly if present
-      if (taskKey === 'twitter_follow' && ts && ts.twitter_follow) stateObj = ts.twitter_follow;
-      if (taskKey === 'invite' && ts && ts.invite) stateObj = ts.invite;
-      applyStateToButton(btn, stateObj);
+      let stateObj = null;
+      if(taskKey === 'telegram') stateObj = mapped.telegram || mapped.telegram_channel || ts && ts.telegram;
+      else stateObj = mapped[taskKey] || null;
+      applyToButton(btnId, stateObj);
     });
 
-    // Update balance display
     const balEl = document.getElementById('balance');
-    if (balEl) {
-      const b = readBalance();
-      balEl.innerText = b.toFixed(2) + ' TON';
-    }
+    if(balEl) balEl.innerText = readBalance().toFixed(2) + ' TON';
   }
 
-  // Apply on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', applyAll);
-  } else {
-    applyAll();
-  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyAll);
+  else applyAll();
 
-  // Listen to storage events (sync across tabs)
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'taskState' || e.key === 'balance' || e.key === null) {
-      // small debounce to avoid thrash
-      setTimeout(applyAll, 50);
-    }
+  window.addEventListener('storage', (e)=>{
+    if(e.key === 'taskState' || e.key === 'balance' || e.key === null) setTimeout(applyAll, 50);
   });
 
-  // Optional: observe local changes to task buttons triggered by other scripts
-  // If app.js updates localStorage via saveData(), storage event won't fire in same tab,
-  // so we poll localStorage periodically to catch same-tab updates.
-  let lastTaskStateJson = localStorage.getItem('taskState');
-  let lastBalance = localStorage.getItem('balance');
-
-  setInterval(() => {
-    const curTaskJson = localStorage.getItem('taskState');
-    const curBal = localStorage.getItem('balance');
-    if (curTaskJson !== lastTaskStateJson || curBal !== lastBalance) {
-      lastTaskStateJson = curTaskJson;
-      lastBalance = curBal;
-      applyAll();
-    }
-  }, 700);
-
+  // Poll same-tab changes (lightweight)
+  let last = localStorage.getItem('taskState') + '|' + localStorage.getItem('balance');
+  setInterval(()=>{
+    const cur = localStorage.getItem('taskState') + '|' + localStorage.getItem('balance');
+    if(cur !== last){ last = cur; applyAll(); }
+  }, 800);
 })();
