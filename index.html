@@ -13,6 +13,7 @@
             --text-color: #f8fafc;
             --accent-color: #0ea5e9;
             --success-color: #22c55e;
+            --danger-color: #ef4444;
         }
 
         body {
@@ -27,7 +28,6 @@
             overflow: hidden;
         }
 
-        /* Header */
         header {
             padding: 20px;
             text-align: center;
@@ -35,7 +35,6 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
 
-        /* Profile Section */
         .profile-container {
             display: flex;
             align-items: center;
@@ -56,15 +55,10 @@
             object-fit: cover;
         }
 
-        .user-details {
-            display: flex;
-            flex-direction: column;
-        }
-
+        .user-details { display: flex; flex-direction: column; }
         #user-name { font-weight: bold; font-size: 1.1rem; }
         #user-username { color: var(--primary-color); font-size: 0.85rem; }
 
-        /* Main Content */
         main {
             flex: 1;
             padding: 20px;
@@ -72,12 +66,12 @@
             padding-bottom: 90px;
         }
 
-        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page { display: none; animation: fadeIn 0.2s ease; }
         .active { display: block; }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .card {
@@ -90,7 +84,6 @@
 
         .stat-val { font-size: 1.8rem; font-weight: bold; color: var(--primary-color); margin-top: 5px; }
 
-        /* Tasks */
         .btn-task {
             display: flex;
             justify-content: space-between;
@@ -102,10 +95,7 @@
             text-decoration: none;
             color: white;
             cursor: pointer;
-            transition: background 0.2s;
         }
-
-        .btn-task:active { background: #475569; }
 
         .status-badge {
             font-size: 0.75rem;
@@ -115,7 +105,6 @@
             font-weight: bold;
         }
 
-        /* Navigation */
         nav {
             position: fixed;
             bottom: 0;
@@ -123,7 +112,7 @@
             background-color: var(--container-bg);
             display: flex;
             justify-content: space-around;
-            padding: 12px 0 25px 0; /* Extra bottom padding for mobile gestures */
+            padding: 12px 0 25px 0;
             border-top: 1px solid #334155;
             z-index: 100;
         }
@@ -134,35 +123,34 @@
             color: #94a3b8;
             font-size: 0.85rem;
             cursor: pointer;
-            transition: 0.3s;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 4px;
         }
 
-        nav button.active-nav {
-            color: var(--primary-color);
+        nav button.active-nav { color: var(--primary-color); font-weight: bold; }
+
+        .action-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
             font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
         }
 
-        .copy-btn {
-            margin-top: 10px;
-            width: 100%;
-            padding: 12px;
-            background: var(--accent-color);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        .action-btn:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1 style="margin:0; font-size: 1.4rem; letter-spacing: 1px;">TON TURBO</h1>
+    <h1 style="margin:0; font-size: 1.4rem;">TON TURBO</h1>
 </header>
 
 <main>
@@ -176,147 +164,165 @@
         </div>
 
         <div class="card" style="text-align: center;">
-            <p style="margin:0; color: #94a3b8;">Total Balance</p>
-            <div class="stat-val" id="balance">0 $TURBO</div>
+            <p style="margin:0; color: #94a3b8;">Current Balance</p>
+            <div class="stat-val" id="balance">0 $TON</div>
         </div>
         
         <div class="card">
-            <h3 style="margin-top:0;">Welcome, Explorer!</h3>
-            <p style="font-size: 0.9rem; line-height: 1.4; color: #cbd5e1;">
-                Complete simple social tasks to accumulate $TURBO tokens before the official launch. Stay tuned for updates!
-            </p>
+            <h3>Welcome!</h3>
+            <p style="font-size: 0.9rem; color: #cbd5e1;">Earn $TON by completing tasks and inviting friends.</p>
         </div>
     </section>
 
     <section id="task" class="page">
-        <h2 style="margin-bottom: 20px;">Airdrop Tasks</h2>
+        <h2>Airdrop Tasks</h2>
         <div class="btn-task" onclick="completeTask('tg', 'https://t.me/TonTurboOfficial')">
             <div>
-                <div style="font-weight: 500;">Join Telegram Channel</div>
-                <div style="font-size: 0.7rem; color: #94a3b8;">Official Community</div>
+                <div>Join Telegram Channel</div>
+                <div style="font-size: 0.7rem; color: #94a3b8;">+1 $TON</div>
             </div>
-            <span id="status-tg" class="status-badge">+50 $TURBO</span>
+            <span id="status-tg" class="status-badge">Start</span>
         </div>
         <div class="btn-task" onclick="completeTask('x', 'https://x.com/tonturboxyz')">
             <div>
-                <div style="font-weight: 500;">Follow X (Twitter)</div>
-                <div style="font-size: 0.7rem; color: #94a3b8;">Latest News</div>
+                <div>Follow X (Twitter)</div>
+                <div style="font-size: 0.7rem; color: #94a3b8;">+1 $TON</div>
             </div>
-            <span id="status-x" class="status-badge">+50 $TURBO</span>
+            <span id="status-x" class="status-badge">Start</span>
         </div>
     </section>
 
     <section id="referral" class="page">
-        <h2>Referral Program</h2>
+        <h2>Referral</h2>
         <div class="card">
-            <p style="font-size: 0.95rem;">Invite friends and earn <span style="color:var(--primary-color);">20 $TURBO</span> per successful referral.</p>
+            <p>Earn <span style="color:var(--primary-color);">0.1 $TON</span> per friend.</p>
             <input type="text" id="ref-link" value="https://t.me/TonTurboBot?start=12345" readonly 
                    style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; color: #38bdf8; border-radius: 8px; box-sizing: border-box;">
-            <button class="copy-btn" onclick="copyReferral()">Copy Referral Link</button>
+            <button class="action-btn" onclick="copyReferral()">Copy Link</button>
         </div>
     </section>
 
     <section id="withdraw" class="page">
-        <h2>Withdrawal</h2>
-        <div class="card" style="text-align: center; padding: 40px 20px;">
-            <p style="color: #94a3b8;">Minimum Requirement: 500 $TURBO</p>
-            <button disabled style="width: 100%; padding: 15px; border-radius: 12px; background: #334155; color: #64748b; border: none; font-weight: bold; font-size: 1rem;">
-                Withdrawal Coming Soon
-            </button>
-            <p style="font-size: 0.8rem; margin-top: 15px; color: #475569;">Token distribution will start after the TGE event.</p>
+        <h2>Withdraw</h2>
+        <div class="card">
+            <p style="text-align: center; color: #94a3b8;">Minimum withdrawal: 5 $TON</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <span style="font-size: 0.9rem;">Your Balance:</span>
+                <div class="stat-val" id="withdraw-balance">0 $TON</div>
+            </div>
+            <button id="withdraw-btn" class="action-btn" onclick="processWithdraw()">Withdraw Now</button>
         </div>
     </section>
 </main>
 
 <nav>
-    <button onclick="showPage('home')" id="nav-home" class="active-nav"><span>🏠</span>Home</button>
-    <button onclick="showPage('task')" id="nav-task"><span>📋</span>Tasks</button>
-    <button onclick="showPage('referral')" id="nav-referral"><span>👥</span>Referral</button>
-    <button onclick="showPage('withdraw')" id="nav-withdraw"><span>💳</span>Withdraw</button>
+    <button onclick="showPage('home')" id="nav-home" class="active-nav">Home</button>
+    <button onclick="showPage('task')" id="nav-task">Tasks</button>
+    <button onclick="showPage('referral')" id="nav-referral">Referral</button>
+    <button onclick="showPage('withdraw')" id="nav-withdraw">Withdraw</button>
 </nav>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
-    tg.headerColor = '#0ea5e9';
 
-    const completedTasks = JSON.parse(localStorage.getItem('tonturbo_tasks')) || {};
+    // Data stored in LocalStorage for demo purposes
+    let userData = JSON.parse(localStorage.getItem('tonturbo_data')) || {
+        tasks: { tg: false, x: false },
+        referrals: 0 // Change this to 30 to test the 5 $TON limit
+    };
 
     function init() {
         loadUserData();
-        if(completedTasks.tg) updateTaskUI('tg');
-        if(completedTasks.x) updateTaskUI('x');
-        calculateBalance();
+        updateUI();
     }
 
     function loadUserData() {
         const user = tg.initDataUnsafe.user;
         if (user) {
-            document.getElementById('user-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-            document.getElementById('user-username').innerText = user.username ? '@' + user.username : 'Explorer';
-            if (user.photo_url) {
-                document.getElementById('user-photo').src = user.photo_url;
-            }
+            document.getElementById('user-name').innerText = user.first_name;
+            document.getElementById('user-username').innerText = user.username ? '@' + user.username : 'User';
+            if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
+        }
+    }
+
+    function calculateBalance() {
+        let bal = 0;
+        if(userData.tasks.tg) bal += 1;
+        if(userData.tasks.x) bal += 1;
+        bal += (userData.referrals * 0.1);
+        return parseFloat(bal.toFixed(2));
+    }
+
+    function updateUI() {
+        const balance = calculateBalance();
+        document.getElementById('balance').innerText = balance + " $TON";
+        document.getElementById('withdraw-balance').innerText = balance + " $TON";
+        
+        // Task UI
+        if(userData.tasks.tg) {
+            document.getElementById('status-tg').innerText = "Done ✅";
+            document.getElementById('status-tg').style.background = "var(--success-color)";
+        }
+        if(userData.tasks.x) {
+            document.getElementById('status-x').innerText = "Done ✅";
+            document.getElementById('status-x').style.background = "var(--success-color)";
+        }
+
+        // Withdraw Button Logic
+        const btn = document.getElementById('withdraw-btn');
+        if (balance < 5) {
+            btn.innerText = "Need 5 $TON to Withdraw";
+            btn.style.opacity = "0.6";
         } else {
-            document.getElementById('user-name').innerText = "Web3 User";
-            document.getElementById('user-username').innerText = "@guest";
+            btn.innerText = "Withdraw Now";
+            btn.style.opacity = "1";
         }
     }
 
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-nav'));
-        
         document.getElementById(pageId).classList.add('active');
         document.getElementById('nav-' + pageId).classList.add('active-nav');
-        tg.HapticFeedback.impactOccurred('light');
     }
 
     function completeTask(type, url) {
-        if (completedTasks[type]) {
-            tg.showAlert("Task already completed!");
-            window.open(url, '_blank');
-            return;
-        }
-
+        if (userData.tasks[type]) return tg.showAlert("Completed!");
         window.open(url, '_blank');
-        
-        // Simulating verification delay
         setTimeout(() => {
-            tg.showConfirm("Did you follow our account? Points will be added after verification.", (confirmed) => {
-                if(confirmed) {
-                    completedTasks[type] = true;
-                    localStorage.setItem('tonturbo_tasks', JSON.stringify(completedTasks));
-                    updateTaskUI(type);
-                    calculateBalance();
-                    tg.HapticFeedback.notificationOccurred('success');
-                }
+            userData.tasks[type] = true;
+            saveData();
+            updateUI();
+            tg.HapticFeedback.notificationOccurred('success');
+        }, 2000);
+    }
+
+    function processWithdraw() {
+        const bal = calculateBalance();
+        if (bal < 5) {
+            tg.showAlert(`You need ${ (5 - bal).toFixed(1) } more $TON to withdraw.`);
+        } else {
+            tg.showPopup({
+                title: 'Withdrawal Request',
+                message: 'Enter your TON wallet address to receive your ' + bal + ' $TON.',
+                buttons: [{text: 'Done', type: 'ok'}]
             });
-        }, 1500);
-    }
-
-    function updateTaskUI(type) {
-        const badge = document.getElementById('status-' + type);
-        badge.innerText = "Completed ✅";
-        badge.style.background = "var(--success-color)";
-    }
-
-    function calculateBalance() {
-        let balance = 0;
-        if(completedTasks.tg) balance += 50;
-        if(completedTasks.x) balance += 50;
-        document.getElementById('balance').innerText = balance + " $TURBO";
+        }
     }
 
     function copyReferral() {
         const copyText = document.getElementById("ref-link");
         copyText.select();
         navigator.clipboard.writeText(copyText.value);
-        tg.showAlert("Referral link copied to clipboard!");
+        tg.showAlert("Link copied!");
+    }
+
+    function saveData() {
+        localStorage.setItem('tonturbo_data', JSON.stringify(userData));
     }
 
     init();
 </script>
-
 </body>
 </html>
