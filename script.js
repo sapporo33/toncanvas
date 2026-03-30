@@ -19,39 +19,46 @@ if (!taskState) {
 
 // SAVE
 function saveData() {
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("taskState", JSON.stringify(taskState));
+  try {
+    localStorage.setItem("balance", balance);
+    localStorage.setItem("taskState", JSON.stringify(taskState));
+    console.log('saveData', { balance, taskState });
+  } catch (e) {
+    console.error('Gagal menyimpan ke localStorage', e);
+  }
 }
 
 // NAV
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
 }
 
 // BALANCE
 function updateBalance() {
-  document.getElementById('balance').innerText = balance.toFixed(2) + ' TON';
+  const el = document.getElementById('balance');
+  if (el) el.innerText = balance.toFixed(2) + ' TON';
 }
 
 // ================= TASK =================
-function startTask(url, amount) {
+window.startTask = function(url, amount) {
+  console.log('startTask called', { url, amount, taskState });
 
   // TELEGRAM ONLY
-  if (url.includes("t.me")) {
-
+  if (typeof url === 'string' && url.includes("t.me")) {
     const btn = document.getElementById("tgBtn");
 
     // 🔒 SUDAH SELESAI → STOP TOTAL
     if (taskState.telegram.claimed === true) {
+      if (btn) { btn.innerText = "Done"; btn.disabled = true; }
       return;
     }
 
     // 🚀 START (HANYA SEKALI)
     if (taskState.telegram.started === false) {
-
       if (window.Telegram?.WebApp) {
-        Telegram.WebApp.openTelegramLink(url);
+        try { Telegram.WebApp.openTelegramLink(url); } catch (e) { window.open(url, '_blank'); }
       } else {
         window.open(url, '_blank');
       }
@@ -59,15 +66,13 @@ function startTask(url, amount) {
       taskState.telegram.started = true;
       saveData();
 
-      btn.innerText = "Claim";
+      if (btn) btn.innerText = "Claim";
       return;
     }
 
     // 🎯 CLAIM (HANYA SEKALI)
     if (taskState.telegram.started === true && taskState.telegram.claimed === false) {
-
       let confirmJoin = confirm("Sudah join channel?");
-
       if (!confirmJoin) return;
 
       taskState.telegram.claimed = true;
@@ -76,31 +81,33 @@ function startTask(url, amount) {
       saveData();
       updateBalance();
 
-      btn.innerText = "Done";
-      btn.disabled = true;
-
+      if (btn) { btn.innerText = "Done"; btn.disabled = true; }
       return;
     }
 
     return;
   }
 
-  // TWITTER
-  window.open(url, '_blank');
+  // TWITTER / LAINNYA
+  try { window.open(url, '_blank'); } catch (e) { console.error('Gagal membuka url', e); }
 
   setTimeout(() => {
-    balance += amount;
+    balance += (typeof amount === 'number' ? amount : 0);
     saveData();
     updateBalance();
   }, 1500);
-}
+};
 
 // INVITE
 function inviteTask() {
   const link = "https://t.me/your_bot?start=ref123";
-
-  navigator.clipboard.writeText(link);
-
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(link).then(() => {
+      console.log('Referral copied');
+    }).catch(() => {
+      console.warn('Clipboard write failed');
+    });
+  }
   balance += 0.1;
   saveData();
   updateBalance();
@@ -108,7 +115,9 @@ function inviteTask() {
 
 // WITHDRAW
 function withdraw() {
-  let val = parseFloat(document.getElementById('wd').value);
+  const input = document.getElementById('wd');
+  if (!input) return;
+  let val = parseFloat(input.value);
 
   if (isNaN(val)) return;
   if (val <= 0) return;
@@ -124,32 +133,40 @@ function initApp() {
   updateBalance();
 
   const btn = document.getElementById("tgBtn");
-
-  if (!btn) return;
+  if (!btn) {
+    console.warn('tgBtn tidak ditemukan');
+    return;
+  }
 
   if (taskState.telegram.claimed === true) {
     btn.innerText = "Done";
     btn.disabled = true;
   } else if (taskState.telegram.started === true) {
     btn.innerText = "Claim";
+    btn.disabled = false;
+  } else {
+    btn.innerText = "Start";
+    btn.disabled = false;
   }
 }
 
-initApp();
+// Pastikan dijalankan setelah DOM siap
+document.addEventListener('DOMContentLoaded', () => {
+  initApp();
 
-// TELEGRAM USER
-if (window.Telegram?.WebApp) {
-  const tg = window.Telegram.WebApp;
-  tg.expand();
+  // TELEGRAM USER
+  if (window.Telegram?.WebApp) {
+    const tg = window.Telegram.WebApp;
+    try { tg.expand(); } catch (e) { /* ignore */ }
 
-  const user = tg.initDataUnsafe?.user;
-
-  if (user) {
-    document.getElementById('username').innerText =
-      '@' + (user.username || user.first_name);
-
-    if (user.photo_url) {
-      document.getElementById('avatar').src = user.photo_url;
+    const user = tg.initDataUnsafe?.user;
+    if (user) {
+      const uname = document.getElementById('username');
+      if (uname) uname.innerText = '@' + (user.username || user.first_name);
+      if (user.photo_url) {
+        const avatar = document.getElementById('avatar');
+        if (avatar) avatar.src = user.photo_url;
+      }
     }
   }
-}
+});
