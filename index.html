@@ -1,183 +1,17 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Telegram Mini App</title>
+// LOAD
+let balance = parseFloat(localStorage.getItem("balance")) || 0;
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+let taskState = JSON.parse(localStorage.getItem("taskState")) || {
+  telegram: {
+    started: false,
+    claimed: false
+  }
+};
 
-  <style>
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Arial;
-      background: #f3f4f6;
-    }
-
-    .container { padding: 16px; padding-bottom: 80px; }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .profile {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .profile img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-    }
-
-    .balance-card {
-      background: linear-gradient(135deg, #000, #111);
-      color: white;
-      padding: 20px;
-      border-radius: 20px;
-      margin: 20px 0;
-    }
-
-    .card {
-      background: white;
-      padding: 15px;
-      border-radius: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .task-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .icon {
-      width: 40px;
-      height: 40px;
-      background: #dbeafe;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .btn {
-      background: black;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 10px;
-    }
-
-    .nav {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      background: white;
-      display: flex;
-      justify-content: space-around;
-      padding: 10px 0;
-      border-top: 1px solid #ddd;
-    }
-
-    .page { display: none; }
-    .active { display: block; }
-  </style>
-</head>
-
-<body>
-
-<div class="container">
-
-  <div id="home" class="page active">
-
-    <div class="header">
-      <div class="profile">
-        <img id="avatar" src="https://via.placeholder.com/40">
-        <div>
-          <div>Welcome back</div>
-          <b id="username">User</b>
-        </div>
-      </div>
-      🔔
-    </div>
-
-    <div class="balance-card">
-      <h2>Total Balance (TON)</h2>
-      <h1 id="balance">0.00 TON</h1>
-    </div>
-
-    <h3>Pending Tasks</h3>
-
-    <!-- Telegram -->
-    <div class="card">
-      <div class="task-left">
-        <div class="icon">📩</div>
-        <div>
-          <div>Ton Turbo Official</div>
-          <small>Telegram Channel (+0.25 TON)</small>
-        </div>
-      </div>
-      <button class="btn" onclick="startTask('https://t.me/TonTurboOfficial', 0.25)">Start</button>
-    </div>
-
-    <!-- Twitter -->
-    <div class="card">
-      <div class="task-left">
-        <div class="icon">🐦</div>
-        <div>
-          <div>Ton Turbo Official</div>
-          <small>Twitter Follow (+0.25 TON)</small>
-        </div>
-      </div>
-      <button class="btn" onclick="startTask('https://x.com/tonturboxyz', 0.25)">Start</button>
-    </div>
-
-    <!-- Invite -->
-    <div class="card">
-      <div class="task-left">
-        <div class="icon">👥</div>
-        <div>
-          <div>Invite Friend</div>
-          <small>+0.10 TON</small>
-        </div>
-      </div>
-      <button class="btn" onclick="inviteTask()">Start</button>
-    </div>
-
-  </div>
-
-  <div id="task" class="page"><h2>Task Center</h2></div>
-  <div id="leaderboard" class="page"><h2>Leaderboard</h2></div>
-  <div id="referral" class="page"><h2>Referral</h2></div>
-
-  <div id="withdraw" class="page">
-    <h2>Withdraw</h2>
-    <input id="wd" placeholder="Jumlah">
-    <button class="btn" onclick="withdraw()">Withdraw</button>
-  </div>
-
-</div>
-
-<div class="nav">
-  <button onclick="showPage('home')">Home</button>
-  <button onclick="showPage('task')">Task</button>
-  <button onclick="showPage('leaderboard')">Rank</button>
-  <button onclick="showPage('referral')">Ref</button>
-  <button onclick="showPage('withdraw')">WD</button>
-</div>
-
-<script>
-let balance = 0;
+function saveData() {
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("taskState", JSON.stringify(taskState));
+}
 
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -188,12 +22,63 @@ function updateBalance() {
   document.getElementById('balance').innerText = balance.toFixed(2) + ' TON';
 }
 
-// TASK (OPEN LINK)
+// ================= TASK =================
 function startTask(url, amount) {
+
+  // TELEGRAM
+  if (url.includes("t.me")) {
+
+    const btn = document.getElementById("tgBtn");
+
+    // HARD LOCK
+    if (taskState.telegram.claimed) {
+      alert("Task sudah selesai");
+      return;
+    }
+
+    // START
+    if (!taskState.telegram.started) {
+
+      if (window.Telegram?.WebApp) {
+        Telegram.WebApp.openTelegramLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+
+      taskState.telegram.started = true;
+      saveData();
+
+      btn.innerText = "Claim";
+      return;
+    }
+
+    // CLAIM
+    let confirmJoin = confirm("Sudah join channel?");
+
+    if (!confirmJoin) {
+      alert("Kamu belum join!");
+      return;
+    }
+
+    taskState.telegram.claimed = true;
+    balance += 0.25;
+
+    saveData();
+    updateBalance();
+
+    btn.innerText = "Done";
+    btn.disabled = true;
+
+    alert("Reward +0.25 TON");
+    return;
+  }
+
+  // TWITTER
   window.open(url, '_blank');
 
   setTimeout(() => {
     balance += amount;
+    saveData();
     updateBalance();
     alert('Reward +' + amount + ' TON');
   }, 1500);
@@ -207,6 +92,7 @@ function inviteTask() {
   alert("Link referral disalin!");
 
   balance += 0.1;
+  saveData();
   updateBalance();
 }
 
@@ -219,11 +105,29 @@ function withdraw() {
   if (val > balance) return alert('Saldo tidak cukup');
 
   balance -= val;
+  saveData();
   updateBalance();
+
   alert('Withdraw berhasil');
 }
 
-// TELEGRAM
+// INIT
+function initApp() {
+  updateBalance();
+
+  const btn = document.getElementById("tgBtn");
+
+  if (taskState.telegram.claimed) {
+    btn.innerText = "Done";
+    btn.disabled = true;
+  } else if (taskState.telegram.started) {
+    btn.innerText = "Claim";
+  }
+}
+
+initApp();
+
+// TELEGRAM USER
 if (window.Telegram?.WebApp) {
   const tg = window.Telegram.WebApp;
   tg.expand();
@@ -239,7 +143,3 @@ if (window.Telegram?.WebApp) {
     }
   }
 }
-</script>
-
-</body>
-</html>
